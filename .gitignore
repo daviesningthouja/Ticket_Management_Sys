@@ -63,3 +63,4 @@ ehthumbs.db
 *.tmp
 *.bak
 *.old
+server/requirements.txt
