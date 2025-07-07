@@ -1,0 +1,65 @@
+# =========================
+# React Client Ignore
+# =========================
+
+# dependencies
+client/node_modules/
+
+# build output
+client/dist/
+client/build/
+
+# misc
+client/.env
+client/.DS_Store
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
+
+# VS Code
+client/.vscode/
+
+# =========================
+# ASP.NET Core Server Ignore
+# =========================
+
+# Build results
+server/bin/
+server/obj/
+server/artifacts/
+server/publish/
+
+# Rider project files
+server/.idea/
+
+# User-specific files
+server/*.suo
+server/*.user
+server/*.userosscache
+server/*.sln.docstates
+
+# Mono Auto Generated Files
+server/*.pidb
+server/*.userprefs
+
+# ASP.NET Core secrets and env
+server/secrets.json
+server/*.env
+
+# Logs
+server/*.log
+
+# VS Code
+server/.vscode/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+.DS_Store
+*.swp
+*.swo
+
+# Others
+*.tmp
+*.bak
+*.old
