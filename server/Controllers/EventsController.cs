@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.Models;
+using server.DTOs;
 
 namespace server.Controllers
 {
@@ -15,33 +17,37 @@ namespace server.Controllers
     public class EventsController : Controller
     {
         private readonly TmsContext _context;
-
-        public EventsController(TmsContext context)
+        private readonly IMapper _mapper;
+        public EventsController(TmsContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: Events
         [Route("events")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Event>>> GetEvents()
+        public async Task<ActionResult<IEnumerable<EventDto>>> GetEvents()
         {
             var events = await _context.Events
                 .Include(e => e.Organizer)
                 .ToListAsync();
-            return Ok(events);
+            var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
+            return Ok(eventDtos);
         }
 
         [Route("event/{id}")]
         [HttpGet]
-        public async Task<ActionResult<Event>> GetEvent(int id)
+        public async Task<ActionResult<EventDto>> GetEvent(int id)
         {
-            if (!EventExists(id))
-                return NotFound();
             var eventItem = await _context.Events
                 .Include(e => e.Organizer)
                 .FirstOrDefaultAsync(e => e.Id == id);
-            return Ok(eventItem);  
+
+            if (!EventExists(id))
+                return NotFound();
+            var eventDto = _mapper.Map<EventDto>(eventItem);
+            return Ok(eventDto);  
         }
 
         /*_________________________________________*/
@@ -51,17 +57,25 @@ namespace server.Controllers
 
         [Route("event/create")]
         [HttpPost]
-        public async Task<ActionResult<Event>> CreateEvent([FromBody] Event eventItem)
+        public async Task<ActionResult<Event>> CreateEvent([FromBody] CreateEventRequest dto)
         {
-            var organizer = await _context.Users.FindAsync(eventItem.OrganizerId);
+            var organizer = await _context.Users.FindAsync(dto.OrganizerId);
             if (organizer == null)
                 return BadRequest("Organizer not found");
+                
+            var eventItem = _mapper.Map<Event>(dto);
             if (eventItem == null)
                 return BadRequest("Event data is null");
-
+            
             _context.Events.Add(eventItem);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetEvent), new { id = eventItem.Id }, eventItem);
+            await _context.Entry(eventItem)
+                .Reference(e => e.Organizer)
+                .LoadAsync(); // Load the organizer after saving
+
+            var eventDto = _mapper.Map<EventDto>(eventItem);
+
+            return CreatedAtAction(nameof(GetEvent), new { id = eventDto.Id }, eventDto);
         }
         private bool EventExists(int id)
         {

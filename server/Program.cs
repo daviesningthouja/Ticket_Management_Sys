@@ -2,10 +2,18 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using server.Data;
 using System.Text;
+using AutoMapper;
+using server.Profiles;
+using server.Models;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// AutoMapper registration ✅
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<MappingProfile>();
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
