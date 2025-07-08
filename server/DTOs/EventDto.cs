@@ -9,8 +9,9 @@ namespace server.DTOs
         public DateTime EventDate { get; set; }
         public string? Status { get; set; }
         public decimal Price { get; set; }
+        //public string? ImageFile { get; set; }
         public string? ImageUrl { get; set; }
-        public int OrganizerId { get; set; }
+        //public int OrganizerId { get; set; }
         public OrganizerDto Organizer { get; set; } = null!;
     }
 }

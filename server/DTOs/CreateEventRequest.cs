@@ -8,7 +8,8 @@
         public DateTime EventDate { get; set; }
         public string? Status { get; set; }
         public decimal Price { get; set; }
-        public string? ImageUrl { get; set; }
+        public IFormFile? ImageFile { get; set; } 
+        //public string? ImageUrl { get; set; }
         public int OrganizerId { get; set; }
     }
 }
