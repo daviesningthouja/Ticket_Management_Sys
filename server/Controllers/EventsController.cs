@@ -25,12 +25,23 @@ namespace server.Controllers
         }
 
         // GET: Events
+        [Route("events/all")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<EventDto>>> GetAllEvents()
+        {
+            var events = await _context.Events
+                .Include(e => e.Organizer)
+                .ToListAsync();
+            var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
+            return Ok(eventDtos);
+        }
         [Route("events")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EventDto>>> GetEvents()
         {
             var events = await _context.Events
                 .Include(e => e.Organizer)
+                .Where(e => e.Status == "Approved")
                 .ToListAsync();
             var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
             return Ok(eventDtos);
@@ -50,9 +61,46 @@ namespace server.Controllers
             return Ok(eventDto);  
         }
 
+        
+        // GET /api/events/search?title=xxx&location=yyy
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<EventDto>>> SearchEvents([FromQuery] string? title, [FromQuery] string? location)
+        {
+            if(title == null && location == null)
+                return BadRequest("At least one search parameter is required");
+            var query = _context.Events.Include(e => e.Organizer).AsQueryable();
+            
+            if (!string.IsNullOrEmpty(title))
+                query = query.Where(e => e.Title.Contains(title));
+
+            if (!string.IsNullOrEmpty(location))
+                query = query.Where(e => e.Location != null && e.Location.Contains(location));
+
+            var events = await query.ToListAsync();
+            return Ok(_mapper.Map<IEnumerable<EventDto>>(events));
+        }
+
         /*_________________________________________*/
         //ROLE: Organizer
         /*_________________________________________*/
+
+        [Route("organizer/events")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<EventDto>>> GetOrganizerEvents([FromQuery] int organizerId)
+        {
+            var organizer = await _context.Users.FindAsync(organizerId);
+            if (organizer == null || organizer.Role != "Organizer")
+                return BadRequest("Organizer not found");
+
+            var events = await _context.Events
+                .Where(e => e.OrganizerId == organizerId)
+                .Include(e => e.Organizer)
+                .ToListAsync();
+
+            var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
+            return Ok(eventDtos);
+        }
+
 
 
         [Route("event/create")]
@@ -179,22 +227,19 @@ namespace server.Controllers
         }
 
 
-        // GET /api/events/search?title=xxx&location=yyy
-        [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<EventDto>>> SearchEvents([FromQuery] string? title, [FromQuery] string? location)
+        [Route("admin/events/pending")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<EventDto>>> GetPendingEvents()
         {
-            var query = _context.Events.Include(e => e.Organizer).AsQueryable();
 
-            if (!string.IsNullOrEmpty(title))
-                query = query.Where(e => e.Title.Contains(title));
+            var pendingEvents = await _context.Events
+                .Where(e => e.Status == "Pending")
+                .Include(e => e.Organizer)
+                .ToListAsync();
 
-            if (!string.IsNullOrEmpty(location))
-                query = query.Where(e => e.Location.Contains(location));
-
-            var events = await query.ToListAsync();
-            return Ok(_mapper.Map<IEnumerable<EventDto>>(events));
+            var pendingEventDtos = _mapper.Map<IEnumerable<EventDto>>(pendingEvents);
+            return Ok(pendingEventDtos);
         }
-
         private bool EventExists(int id)
         {
             return _context.Events.Any(e => e.Id == id);

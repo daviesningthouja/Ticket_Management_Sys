@@ -11,6 +11,9 @@ public partial class Ticket
     [Key]
     public int Id { get; set; }
 
+    [StringLength(50)]
+    public string TicketNo { get; set; } = null!;
+
     public int UserId { get; set; }
 
     public int EventId { get; set; }

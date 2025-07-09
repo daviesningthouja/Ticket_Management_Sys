@@ -64,3 +64,4 @@ ehthumbs.db
 *.bak
 *.old
 server/requirement.txt
+server/wwwroot/img/

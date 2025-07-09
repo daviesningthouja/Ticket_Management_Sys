@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.Models;
-
+using server.DTOs;
+using AutoMapper;
 namespace server.Controllers
 {
     [Route("api")]
@@ -15,16 +16,21 @@ namespace server.Controllers
     public class UsersController : Controller
     {
         private readonly TmsContext _context;
+        private readonly IMapper _mapper;
 
-        public UsersController(TmsContext context)
+        public UsersController(TmsContext context, IMapper mapper)
         {
+            _mapper = mapper;
             _context = context;
         }
         [Route("users")]
         [HttpGet]
-        public async Task<IEnumerable<User>> GetUsers()
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
-            return await _context.Users.ToListAsync();
+            var u = await _context.Users.ToListAsync();
+            var users = _mapper.Map<IEnumerable<UserDto>>(u);
+            return Ok(users);
+            //return await _context.Users.ToListAsync();
         }
         [Route("search/{id}")]
         [HttpGet]

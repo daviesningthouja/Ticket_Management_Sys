@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace server.Models;
@@ -36,7 +35,6 @@ public partial class Event
     [Column(TypeName = "datetime")]
     public DateTime? CreatedAt { get; set; }
 
-   
     [ForeignKey("OrganizerId")]
     [InverseProperty("Events")]
     public virtual User Organizer { get; set; } = null!;
