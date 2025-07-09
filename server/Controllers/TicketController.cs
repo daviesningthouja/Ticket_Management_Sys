@@ -39,7 +39,7 @@ namespace server.Controllers
             var eventItem = await _context.Events.FindAsync(request.EventId);
             if (user == null || eventItem == null)
                 return NotFound("User or Event not found");
-            
+
             var ticket = _mapper.Map<Ticket>(request);
             ticket.BookingTime = DateTime.Now;
             ticket.TicketNo = GenerateTicketNumber();
@@ -52,7 +52,43 @@ namespace server.Controllers
 
         }
 
+        [Route("user/{userId}")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TicketDto>>> GetUserTickets([FromRoute] int userId)
+        {
+            var u = await _context.Users.FindAsync(userId);
+            if (u == null)
+                return NotFound(new { message = "User not found" });
 
+            var t = await _context.Tickets
+                .Where(t => t.UserId == userId)
+                .Include(t => t.Event)
+                .ToListAsync();
+            var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(t);
+            return Ok(ticketDtos);
+
+        }
+
+        /*_________________________________________*/
+        //ROLE: Organizer
+        /*_________________________________________*/
+
+        [Route("event/{eventId}")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TicketDto>>> GetEventTickets([FromRoute] int eventId)
+        { 
+            var e = await _context.Events.FindAsync(eventId);
+            if (e == null)
+                return NotFound(new { message = "Event not found" });
+
+            var tickets = await _context.Tickets
+                .Where(t => t.EventId == eventId)
+                .Include(t => t.User)
+                .ToListAsync();
+            var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(tickets);
+            
+            return Ok(ticketDtos);
+        }    
 
 
         /*_________________________________________*/
