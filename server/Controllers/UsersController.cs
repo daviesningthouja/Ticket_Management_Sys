@@ -9,24 +9,31 @@ using server.Data;
 using server.Models;
 using server.DTOs;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using server.Services;
 namespace server.Controllers
 {
     [Route("api")]
     [ApiController]
+    [Authorize]
     public class UsersController : Controller
     {
         private readonly TmsContext _context;
         private readonly IMapper _mapper;
+        private readonly ICurrentUserService _currentUser;
 
-        public UsersController(TmsContext context, IMapper mapper)
+        public UsersController(TmsContext context, IMapper mapper, ICurrentUserService currentUser)
         {
             _mapper = mapper;
             _context = context;
+            _currentUser = currentUser;
         }
         [Route("users")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
+            if (!_currentUser.IsAdmin())
+                return Unauthorized("Needs Admin Permission");
             var u = await _context.Users.ToListAsync();
             var users = _mapper.Map<IEnumerable<UserDto>>(u);
             return Ok(users);
@@ -45,6 +52,7 @@ namespace server.Controllers
             return user;
         }
 
+        /*
         [Route("register")]
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser([FromBody] User user)
@@ -58,6 +66,7 @@ namespace server.Controllers
 
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
+        */
 
     }
 }

@@ -9,19 +9,23 @@ using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.Models;
 using server.DTOs;
-
+using Microsoft.AspNetCore.Authorization;
+using server.Services;
 namespace server.Controllers
 {
     [ApiController]
     [Route("api")]
+    [Authorize]
     public class EventsController : Controller
     {
         private readonly TmsContext _context;
         private readonly IMapper _mapper;
-        public EventsController(TmsContext context, IMapper mapper)
+        private readonly ICurrentUserService _currentUser;
+        public EventsController(TmsContext context, IMapper mapper, ICurrentUserService currentUser)
         {
             _context = context;
             _mapper = mapper;
+            _currentUser = currentUser;
         }
 
         // GET: Events
@@ -58,18 +62,18 @@ namespace server.Controllers
             if (!EventExists(id))
                 return NotFound();
             var eventDto = _mapper.Map<EventDto>(eventItem);
-            return Ok(eventDto);  
+            return Ok(eventDto);
         }
 
-        
+
         // GET /api/events/search?title=xxx&location=yyy
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<EventDto>>> SearchEvents([FromQuery] string? title, [FromQuery] string? location)
         {
-            if(title == null && location == null)
+            if (title == null && location == null)
                 return BadRequest("At least one search parameter is required");
             var query = _context.Events.Include(e => e.Organizer).AsQueryable();
-            
+
             if (!string.IsNullOrEmpty(title))
                 query = query.Where(e => e.Title.Contains(title));
 
@@ -83,15 +87,17 @@ namespace server.Controllers
         /*_________________________________________*/
         //ROLE: Organizer
         /*_________________________________________*/
-
-        [Route("organizer/events")]
+        [Route("org/events")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EventDto>>> GetOrganizerEvents([FromQuery] int organizerId)
+        public async Task<ActionResult<IEnumerable<EventDto>>> GetOrganizerEvents()
         {
-            var organizer = await _context.Users.FindAsync(organizerId);
-            if (organizer == null || organizer.Role != "Organizer")
-                return BadRequest("Organizer not found");
+            if (!_currentUser.IsOrganizer())
+                return Unauthorized("Needs to be organizer");
+            //var organizer = await _context.Users.FindAsync(organizerId);
+            // if (organizer == null || organizer.Role != "Organizer")
+            //     return BadRequest("Organizer not found");
 
+            var organizerId = _currentUser.GetUserId();
             var events = await _context.Events
                 .Where(e => e.OrganizerId == organizerId)
                 .Include(e => e.Organizer)
@@ -108,19 +114,18 @@ namespace server.Controllers
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<EventDto>> CreateEvent([FromForm] CreateEventRequest dto)
         {
-            if(dto  == null)
+            if (!_currentUser.IsOrganizer())
+                return Unauthorized("Needs to be organizer");
+            if (dto == null)
                 return BadRequest("Event data is null");
-                
-            //TODO: Validate the request body (Organizer or User)
-            var organizer = await _context.Users.FindAsync(dto.OrganizerId);
-            if (organizer == null || organizer.Role != "Organizer")
-                return BadRequest("Organizer not found");
 
+            //var organizer = await _context.Users.FindAsync(oID);
+            //dto.OrganizerId = oID;
             var ImgUrl = "";
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
                 // Save the image file and get the URL
-               var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
                 Directory.CreateDirectory(uploadsFolder); // create folder if not exists
 
                 var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(dto.ImageFile?.FileName)}";
@@ -136,8 +141,13 @@ namespace server.Controllers
 
                 ImgUrl = $"/img/{uniqueFileName}";
             }
+
+
+            var oID = _currentUser.GetUserId();
             var eventItem = _mapper.Map<Event>(dto);
             eventItem.ImageUrl = ImgUrl;
+            //auto take organizer id from token
+            eventItem.OrganizerId = oID;
             if (eventItem == null)
                 return BadRequest("Event data is null");
 
@@ -159,18 +169,20 @@ namespace server.Controllers
         public async Task<ActionResult<EventDto>> UpdateEvent(int id, [FromForm] CreateEventRequest dto)
         {
             // TODO: Validate the request body
+            if (!_currentUser.IsOrganizer())
+                return Unauthorized("Need To be Organizer");
+
             var eventItem = await _context.Events.FindAsync(id);
             if (eventItem == null)
                 return NotFound();
 
-            var organizer = await _context.Users.FindAsync(eventItem.OrganizerId);
-            if (organizer == null)
-                return BadRequest("Organizer not found");
+            if (!_currentUser.IsOrganizer())
+                return Unauthorized("Need to be organizer");
             var ImgUrl = "";
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
-               var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
-                Directory.CreateDirectory(uploadsFolder); 
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
+                Directory.CreateDirectory(uploadsFolder);
                 var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(dto.ImageFile?.FileName)}";
                 var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
@@ -184,8 +196,12 @@ namespace server.Controllers
 
                 ImgUrl = $"/img/{uniqueFileName}";
             }
+
+            var oID = _currentUser.GetUserId();
+
             _mapper.Map(dto, eventItem);
             eventItem.ImageUrl = ImgUrl;
+            eventItem.OrganizerId = oID;
             _context.Events.Update(eventItem);
             await _context.SaveChangesAsync();
 
@@ -194,18 +210,6 @@ namespace server.Controllers
         }
 
 
-        [Route("event/delete/{id}")]
-        [HttpDelete]
-        public async Task<ActionResult> DeleteEvent(int id)
-        { 
-            var eventItem = await _context.Events.FindAsync(id);
-            if (eventItem == null)
-                return NotFound();
-
-            _context.Events.Remove(eventItem);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
 
         /*_________________________________________*/
         //ROLE: Administrator
@@ -214,6 +218,9 @@ namespace server.Controllers
         [HttpPatch]
         public async Task<IActionResult> ChangeEventStatus(int id, [FromQuery] string status)
         {
+            if (!_currentUser.IsAdmin())
+                return Unauthorized("Needs to be Admin");
+
             var ev = await _context.Events.FindAsync(id);
             if (ev == null)
                 return NotFound();
@@ -226,11 +233,12 @@ namespace server.Controllers
             return Ok(new { message = $"Event status changed to {status}" });
         }
 
-
         [Route("admin/events/pending")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EventDto>>> GetPendingEvents()
         {
+            if (!_currentUser.IsAdmin())
+                return Unauthorized("Need to be Admins");
 
             var pendingEvents = await _context.Events
                 .Where(e => e.Status == "Pending")
@@ -244,5 +252,21 @@ namespace server.Controllers
         {
             return _context.Events.Any(e => e.Id == id);
         }
+        
+        [Route("event/delete/{id}")]
+        [HttpDelete]
+        public async Task<ActionResult> DeleteEvent(int id)
+        {
+            if (!_currentUser.IsAdmin())
+                return Unauthorized("Need to be Admin");
+            var eventItem = await _context.Events.FindAsync(id);
+            if (eventItem == null)
+                return NotFound();
+
+            _context.Events.Remove(eventItem);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+        
     }
 }

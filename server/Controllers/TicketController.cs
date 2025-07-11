@@ -5,19 +5,25 @@ using server.Models;
 using server.DTOs;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using server.DTOs.Auths;
+using server.Services;
 namespace server.Controllers
 {
     [ApiController]
     [Route("api/ticket")]
+    [Authorize]
     public class TicketController : Controller
     {
         private readonly IMapper _mapper;
         private readonly TmsContext _context;
+        private readonly ICurrentUserService _currentUser;
 
-        public TicketController(TmsContext context, IMapper mapper)
+        public TicketController(TmsContext context, IMapper mapper, ICurrentUserService currentUser)
         {
             _context = context;
             _mapper = mapper;
+            _currentUser = currentUser;
         }
 
         private string GenerateTicketNumber()
@@ -30,7 +36,7 @@ namespace server.Controllers
             var ticketNumber = $"TKT-{DateTime.Now:yyyyMMdd}-{randomPart}";
             return $"TKT-{DateTime.Now:yyyyMMdd}-{randomPart}";
         }
-        
+
         [Route("book")]
         [HttpPost]
         public async Task<ActionResult<TicketDto>> BookTicket([FromBody] BookTicketRequest request)
@@ -46,16 +52,43 @@ namespace server.Controllers
 
             _context.Tickets.Add(ticket);
             await _context.SaveChangesAsync();
-            var ticketDto = _mapper.Map<TicketDto>(ticket); 
-         
+            var ticketDto = _mapper.Map<TicketDto>(ticket);
+
             return Ok(ticketDto);
 
         }
+
+        //this for org need for user 
+        [Route("MyTicket")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TicketDto>>> GetUserTickets()
+        {
+            var uID = _currentUser.GetUserId();
+
+            var u = await _context.Users.FindAsync(uID);
+            if (u == null)
+                return NotFound(new { message = "User not found" });
+
+            var t = await _context.Tickets
+                .Where(t => t.UserId == uID)
+                .Include(t => t.Event)
+                .ToListAsync();
+            var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(t);
+            return Ok(ticketDtos);
+
+        }
+
+        /*_________________________________________*/
+        //ROLE: Organizer
+        /*_________________________________________*/
+       
 
         [Route("user/{userId}")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TicketDto>>> GetUserTickets([FromRoute] int userId)
         {
+            if (!_currentUser.IsOrganizer())
+                return Unauthorized("Needs to be Organizer");
             var u = await _context.Users.FindAsync(userId);
             if (u == null)
                 return NotFound(new { message = "User not found" });
@@ -69,14 +102,12 @@ namespace server.Controllers
 
         }
 
-        /*_________________________________________*/
-        //ROLE: Organizer
-        /*_________________________________________*/
-
         [Route("event/{eventId}")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TicketDto>>> GetEventTickets([FromRoute] int eventId)
-        { 
+        {
+            if (!_currentUser.IsOrganizer())
+                return Unauthorized("Needs to be Organizer");
             var e = await _context.Events.FindAsync(eventId);
             if (e == null)
                 return NotFound(new { message = "Event not found" });
@@ -86,9 +117,9 @@ namespace server.Controllers
                 .Include(t => t.User)
                 .ToListAsync();
             var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(tickets);
-            
+
             return Ok(ticketDtos);
-        }    
+        }
 
 
         /*_________________________________________*/
@@ -99,26 +130,30 @@ namespace server.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TicketDto>>> GetTickets()
         {
-            var tickets =  await _context.Tickets
+            if (!_currentUser.IsAdmin())
+                return Unauthorized("Needs to be Admin");
+            var tickets = await _context.Tickets
                 .Include(t => t.User)
                 .Include(t => t.Event)
                 .ToListAsync();
             var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(tickets);
-            
+
             return Ok(ticketDtos);
         }
 
         [Route("{id}")]
         [HttpDelete]
-        public async Task<ActionResult> DeleteTicket ([FromRoute] int id)
+        public async Task<ActionResult> DeleteTicket([FromRoute] int id)
         {
+            if (!_currentUser.IsOrganizer() || !_currentUser.IsAdmin())
+                return Unauthorized("Needs to be Organizer or Admin");
             var ticket = await _context.Tickets.FindAsync(id);
             if (ticket == null)
             {
-            return NotFound(new { message = "Ticket not found" });
+                return NotFound(new { message = "Ticket not found" });
             }
             _context.Tickets.Remove(ticket);
-            
+
             return Ok(new { message = "Ticket deleted successfully" });
         }
 

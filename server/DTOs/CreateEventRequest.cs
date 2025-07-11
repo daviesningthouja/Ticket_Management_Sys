@@ -10,6 +10,6 @@
         public decimal Price { get; set; }
         public IFormFile? ImageFile { get; set; } 
         //public string? ImageUrl { get; set; }
-        public int OrganizerId { get; set; }
+        //public int OrganizerId { get; set; }
     }
 }

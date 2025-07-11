@@ -1,7 +1,7 @@
 using AutoMapper;
 using server.Models;
 using server.DTOs;
-
+using server.DTOs.Auths;
 namespace server.Profiles
 {
     public class MappingProfile : Profile
@@ -9,6 +9,13 @@ namespace server.Profiles
         public MappingProfile()
         {
             CreateMap<User, UserDto>();
+            CreateMap<RegisterRequest, User>()
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role))
+                .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
+
+            CreateMap<User, AuthResponse>()
+            .ForMember(dest => dest.Token, opt => opt.Ignore()); // Token will be added manually
+
             //CreateMap<CreateUserRequest, User>();
             CreateMap<Event, EventDto>();
             CreateMap<User, OrganizerDto>();
