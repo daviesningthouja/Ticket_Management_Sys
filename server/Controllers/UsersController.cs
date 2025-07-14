@@ -11,6 +11,7 @@ using server.DTOs;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using server.Services;
+using server.DTOs.Users;
 namespace server.Controllers
 {
     [Route("api")]
@@ -28,7 +29,80 @@ namespace server.Controllers
             _context = context;
             _currentUser = currentUser;
         }
-        [Route("users")]
+
+        [Route("user/profile")]
+        [HttpGet]
+        public async Task<ActionResult> GetUserProfile()
+        {
+            var uID = _currentUser.GetUserId();
+            var u = await _context.Users
+                            .FindAsync(uID);
+            var user = _mapper.Map<UserDto>(u);
+            return Ok(user);
+        }
+
+        [Route("user/profile/edit")]
+        [HttpPut]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> EditUserProfile([FromForm] EditUserProfile req)
+        {
+            var uID = _currentUser.GetUserId();
+            var u = await _context.Users.FindAsync(uID);
+            if (u == null)
+                return BadRequest("Please fill the Name");
+            if (req.PfpUrl != null && req.PfpUrl.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "pfp");
+                var unqFileName = $"{Guid.NewGuid()}{Path.GetExtension(req.PfpUrl?.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, unqFileName);
+                using var stream = new FileStream(filePath, FileMode.Create);
+                if (req.PfpUrl != null)
+                {
+                    await req.PfpUrl.CopyToAsync(stream);
+                }
+                u.PfpUrl = $"/pfp/{unqFileName}";
+            }
+
+            // Update only fields that are not null
+            if (!string.IsNullOrEmpty(req.Name))
+                u.Name = req.Name;
+
+            if (!string.IsNullOrEmpty(req.Email))
+            {
+                // Optional: prevent duplicate email update
+                var exists = await _context.Users.AnyAsync(u => u.Email == req.Email && u.Id != uID);
+                if (exists)
+                    return BadRequest("Email already in use.");
+                u.Email = req.Email;
+            }
+            await _context.SaveChangesAsync();
+            var profile = _mapper.Map<UserDto>(u);
+
+            return Ok(profile);
+        }
+
+
+
+        //Admin || Organizer
+        [Route("user/acc/delete/{id}")]
+        [HttpDelete]
+        public async Task<ActionResult> DeleteUser(int id)
+        {
+            if (!_currentUser.IsAdmin())
+                return Unauthorized("Unauthorized. Admin action");
+
+            var uID = id;
+            var u = await _context.Users.FindAsync(uID);
+            if (u == null)
+                return BadRequest("invalid user");
+            _context.Users.Remove(u);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+
+
+        [Route("users/list")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
@@ -39,10 +113,12 @@ namespace server.Controllers
             return Ok(users);
             //return await _context.Users.ToListAsync();
         }
-        [Route("search/{id}")]
+        [Route("user/{id}")]
         [HttpGet]
         public async Task<ActionResult<User>> GetUser(int id)
         {
+            if (!_currentUser.IsOrganizer() || !_currentUser.IsAdmin())
+                return Unauthorized("Needs to be organizer or admin");
             var user = await _context.Users
                 .FindAsync(id);
 

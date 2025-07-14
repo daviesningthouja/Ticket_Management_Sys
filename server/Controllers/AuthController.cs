@@ -10,6 +10,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using server.Services;
 
 namespace server.Controllers
 {
@@ -21,17 +23,60 @@ namespace server.Controllers
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly PasswordHasher<User> _passwordHasher;
+        private readonly ICurrentUserService _currentUser;
 
-        public AuthController(TmsContext context, IMapper mapper, IConfiguration configuration)
+        public AuthController(TmsContext context, IMapper mapper, IConfiguration configuration, ICurrentUserService currentUser)
         {
             _context = context;
             _mapper = mapper;
             _configuration = configuration;
             _passwordHasher = new PasswordHasher<User>();
+            _currentUser = currentUser;
+        }
+
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordReq req)
+        {
+            var uID = _currentUser.GetUserId();
+            var u = await _context.Users.FindAsync(uID);
+            if (u == null)
+                return BadRequest("no user found");
+
+            var unHashedps = req.CurrentPassword;
+            if (unHashedps == u.PasswordHash)
+            {
+                if (req.NewPassword != req.ConfirmPassword)
+                    return BadRequest("Not Match Password");
+                    
+                if (req.NewPassword.Length < 6)
+                    return BadRequest("Password length should be six digit");
+
+                u.PasswordHash = _passwordHasher.HashPassword(u, req.NewPassword);
+                _context.Users.Update(u);
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Password changed successfully" });
+            }
+            //verify the hash pass field 
+            var result = _passwordHasher.VerifyHashedPassword(u, u.PasswordHash, req.CurrentPassword);
+
+            if (result == PasswordVerificationResult.Failed)
+                return BadRequest("Current password is incorrent");
+            //check if the con and new pass is same
+            if (req.NewPassword != req.ConfirmPassword)
+                return BadRequest("Not Match Password");
+            //define to make the pass 6 digit
+            if (req.NewPassword.Length < 6)
+                return BadRequest("Password length should be six digit");
+            u.PasswordHash = _passwordHasher.HashPassword(u, req.NewPassword);
+            _context.Users.Update(u);
+            await _context.SaveChangesAsync();  
+            return Ok(new { message = "Password changed successfully" });                      
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Register([FromForm] RegisterRequest request)
         {
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             {
@@ -41,15 +86,40 @@ namespace server.Controllers
             {
                 return BadRequest("Passwords do not match.");
             }
-            if (request.Role == null)
-                request.Role = "User";
-            
+            if (request.Password == null)
+                return BadRequest("Password field is null");
+            if (request.Password.Length < 6)
+                return BadRequest("Password length should be six digit");
+
+            //profile pfp
+            var pfpUrl = "";
+            if (request.PfpUrl != null && request.PfpUrl.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "pfp");
+                Directory.CreateDirectory(uploadsFolder);
+
+                var unqFileName = $"{Guid.NewGuid()}{Path.GetExtension(request.PfpUrl?.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, unqFileName);
+                using var stream = new FileStream(filePath, FileMode.Create);
+                if (request.PfpUrl != null)
+                {
+                    await request.PfpUrl.CopyToAsync(stream);
+                }
+                pfpUrl = $"/pfp/{unqFileName}";
+            }
+
+            // if role field is null fill it "User"    
+            request.Role ??= "User";
+
+
             var user = _mapper.Map<User>(request);
             user.PasswordHash = _passwordHasher.HashPassword(user, request.Password ?? "");
-
+            //add directly to the profile
+            user.PfpUrl = pfpUrl;
+        
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            return Ok(new { Message = "User registered successfully." }); 
+            return Ok(new { Message = "User registered successfully." });
 
         }
         

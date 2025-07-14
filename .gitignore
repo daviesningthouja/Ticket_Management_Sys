@@ -65,3 +65,4 @@ ehthumbs.db
 *.old
 server/requirement.txt
 server/wwwroot/img/
+server/wwwroot/
