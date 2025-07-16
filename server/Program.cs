@@ -81,6 +81,16 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Add CORS for frontend
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // React frontend
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
@@ -100,20 +110,10 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-//add cor for frontend
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.WithOrigins("http://localhost:3000") // React frontend
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
-
-app.UseCors();
 
 app.UseRouting();
+
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 

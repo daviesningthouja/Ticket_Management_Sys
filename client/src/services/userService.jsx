@@ -1,0 +1,54 @@
+//import axios from 'axios';
+import api from './apiConfig';
+//import { getUser } from '../utils/authUtils';
+
+export const getUserProfile = async () => {
+    try{
+        const res = await api.get('/user/profile');
+        return res.data;
+    }catch(err){
+        console.error('error while getting profile', err)
+        throw err;
+    }
+}
+
+export const editUserProfile = async (data) => {
+    try{
+        const res = await api.put('/user/profile/edit', data);
+        return res.data;
+    }catch(err){
+        console.error("error while updating profile", err);
+        throw err;
+    }
+}
+
+//admin or organizer
+export const deleteUser = async (id) => {
+    try{
+        const res = await api.delete(`/user/acc/delete/${id}`)
+        return res.data;
+    }catch(err){
+        console.error("error while deleting profile", err);
+        throw err;
+    }
+}
+
+export const getUserList = async () =>{
+    try{
+        const res = await api.delete(`/users/list`)
+        return res.data;
+    }catch(err){
+        console.error("error while listing user", err);
+        throw err;
+    } 
+} 
+
+export const getUserByID = async (id) =>{
+    try{
+        const res = await api.delete(`/user/${id}`)
+        return res.data;
+    }catch(err){
+        console.error("error while fetching user by ID", err);
+        throw err;
+    } 
+} 
