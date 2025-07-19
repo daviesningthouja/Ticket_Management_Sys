@@ -19,3 +19,8 @@
 .profile-box strong {
   color: #333;
 }
+
+.img img{
+  height: 250px;
+  width: 250px;
+}

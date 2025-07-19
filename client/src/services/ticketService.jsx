@@ -4,7 +4,8 @@ import api from "./apiConfig";
 //user
 export const bookTicket = async (FormData) => {
     try{
-        const res = api.post('/ticket/book', FormData);
+        const res = await api.post('/ticket/book', FormData);
+        //console.log(res,res.data);
         return res.data;
     }catch(err){
         console.error("error while booking ticket", err);
@@ -14,7 +15,8 @@ export const bookTicket = async (FormData) => {
 
 export const getUserTicket = async () => {
     try{
-        const res = api.get('/ticket/MyTicket');
+        const res = await api.get('/ticket/MyTicket');
+        //console.log(res)
         return res.data;
     }catch(err){
         console.error("error while getting user ticket",err);
@@ -25,7 +27,7 @@ export const getUserTicket = async () => {
 //organizer
 export const getTicketByUserID = async (userId) => {
     try{
-        const res = api.get(`/ticket/user/${userId}`);
+        const res = await api.get(`/ticket/user/${userId}`);
         return res.data;
     }catch(err){
         console.error('error while fetching ticket by userid', err);
@@ -35,7 +37,7 @@ export const getTicketByUserID = async (userId) => {
 
 export const getTicketByEventId = async (eventId) => {
     try{
-        const res = api.get(`/ticket/event/${eventId}`);
+        const res = await api.get(`/ticket/event/${eventId}`);
         return res.data;
     }catch(err){
          console.error('error while fetching ticket by eventid', err);
@@ -46,7 +48,7 @@ export const getTicketByEventId = async (eventId) => {
 //Admin 
 export const getTicketList = async () => {
     try{
-        const res = api.get(`/ticket/list`);
+        const res = await api.get(`/ticket/list`);
         return res.data;
     }catch(err){
         console.error('error while fetching ticket list', err);
@@ -56,7 +58,7 @@ export const getTicketList = async () => {
 
 export const getTicketByID = async (id) => {
     try{
-        const res = api.get(`/ticket/${id}`);
+        const res = await api.get(`/ticket/${id}`);
         return res.data;
     }catch(err){
         console.error('error while fetching ticket by id', err);

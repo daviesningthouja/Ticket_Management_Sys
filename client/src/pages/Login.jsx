@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { setAuth } from '../utils/authUtils'
-import "../styles/login.css"
+import "../styles/global/login.css"
 import { loginUser } from '../services/authService'
+import Input from '../components/Input'
 const Login = () => {
   const [form, setForm] = useState({email: "", password: ""});
   const [error, setError] = useState("");
@@ -16,7 +17,7 @@ const Login = () => {
     e.preventDefault();
     try{
       const res = await loginUser(form);
-      setAuth(res.token,res);
+      setAuth(res.token,res,res.id,res.role);
       const role = res.role.toLowerCase();
       navigate(`/${role}`);
     } catch (err){
@@ -29,7 +30,7 @@ const Login = () => {
       {error && <p className='error'>{error}</p>}
        <form onSubmit={handleLogin} className="login-form">
       <h2>Login</h2>
-        <input
+        <Input
           type="email"
           name="email"
           placeholder="Email"
@@ -37,7 +38,7 @@ const Login = () => {
           onChange={handleChange}
           required
         />
-        <input
+        <Input
           type="password"
           name="password"
           placeholder="Password"

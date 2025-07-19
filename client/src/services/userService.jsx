@@ -22,6 +22,18 @@ export const editUserProfile = async (data) => {
     }
 }
 
+export const changePassword = async ({CurrentPassword, NewPassword,ConfirmPassword }) => {
+     try{
+        const res = await api.put('/auth/change-password', {CurrentPassword, NewPassword,ConfirmPassword });
+        console.log(res.data)
+        return res.data;
+        
+    }catch(err){
+        console.error("error while updating profile", err);
+        throw err;
+    }
+}
+
 //admin or organizer
 export const deleteUser = async (id) => {
     try{

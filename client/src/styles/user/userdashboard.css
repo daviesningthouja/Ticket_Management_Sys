@@ -1,0 +1,102 @@
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: sans-serif;
+}
+.dashboard-content{
+  background-color: #a0a2a4;
+}
+
+/* Sidebar */
+.sidebar {
+  background-color: #2c3e50;
+  color: #fff;
+  width: 220px;
+  padding: 20px 10px;
+  transition: width 0.9s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.sidebar.collapsed {
+  width: 60px;
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+  cursor: pointer;
+  font-size: 1.4rem;
+  text-align: right;
+  margin-bottom: 1rem;
+  color: #ecf0f1;
+}
+
+/* Title visibility control */
+.sidebar-title {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  transition: opacity 0.8s ease;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed .sidebar-title {
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  transition: all 0.9s ease-out;
+}
+
+/* Sidebar List */
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar ul li {
+  margin: 1rem 0;
+}
+
+.sidebar ul li a {
+  color: #fff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.2s ease, padding 0.2s ease,;
+}
+
+.sidebar ul li a:hover {
+  background-color: #34495e;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+.sidebar ul li a.active {
+  background-color: #1abc9c;
+  padding: 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* Collapse list text when sidebar is collapsed */
+.sidebar.collapsed ul li a span {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  transition: opacity 0.5s ease, width 0.5s ease;
+  pointer-events: none;
+}
+
+
+.dashboard-content {
+  flex: 1;
+  padding: 20px;
+}

@@ -1,0 +1,24 @@
+.my-tickets {
+  padding: 20px;
+}
+
+.ticket-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.ticket-table th, .ticket-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.ticket-table th {
+  background-color: #f4f4f4;
+}
+
+.loading {
+  font-size: 1.2rem;
+  font-weight: 500;
+}

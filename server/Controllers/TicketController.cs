@@ -46,22 +46,35 @@ namespace server.Controllers
             if (user == null || eventItem == null)
                 return NotFound("User or Event not found");
 
-            var ticket = _mapper.Map<Ticket>(request);
-            ticket.BookingTime = DateTime.Now;
-            ticket.TicketNo = GenerateTicketNumber();
 
-            _context.Tickets.Add(ticket);
+            var tickets = new List<Ticket>();
+            decimal pricePerTicket = eventItem.Price;
+            decimal totalPrice = pricePerTicket * request.Quantity;
+
+            // Create a ticket for each quantity with its own ticket number
+            for (int i = 0; i < request.Quantity; i++)
+            {
+                var newTicket = new Ticket
+                {
+                    UserId = request.UserId,
+                    EventId = request.EventId,
+                    BookingTime = DateTime.UtcNow,
+                    Quantity = 1, // each ticket = 1 quantity
+                    TotalPrice = pricePerTicket,
+                    TicketNo = GenerateTicketNumber()
+                };
+                tickets.Add(newTicket);
+                _context.Tickets.Add(newTicket);
+            }
             await _context.SaveChangesAsync();
-            var ticketDto = _mapper.Map<TicketDto>(ticket);
-
-            return Ok(ticketDto);
-
+            var ticketDtos = tickets.Select(t => _mapper.Map<TicketDto>(t)).ToList();
+            return Ok(ticketDtos); // return all the booked ticket DTOs
         }
 
         //this for org need for user 
         [Route("MyTicket")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TicketDto>>> GetUserTickets()
+        public async Task<ActionResult<IEnumerable<TicketDto>>> GetMyTickets()
         {
             var uID = _currentUser.GetUserId();
 
@@ -81,7 +94,7 @@ namespace server.Controllers
         /*_________________________________________*/
         //ROLE: Organizer
         /*_________________________________________*/
-       
+
 
         [Route("user/{userId}")]
         [HttpGet]
@@ -145,7 +158,7 @@ namespace server.Controllers
         [HttpDelete]
         public async Task<ActionResult> DeleteTicket([FromRoute] int id)
         {
-            if (!_currentUser.IsOrganizer() || !_currentUser.IsAdmin())
+            if (!_currentUser.IsAdmin())
                 return Unauthorized("Needs to be Organizer or Admin");
             var ticket = await _context.Tickets.FindAsync(id);
             if (ticket == null)
@@ -153,10 +166,13 @@ namespace server.Controllers
                 return NotFound(new { message = "Ticket not found" });
             }
             _context.Tickets.Remove(ticket);
+            await _context.SaveChangesAsync();
 
             return Ok(new { message = "Ticket deleted successfully" });
         }
 
+
+        
 
 
 

@@ -1,7 +1,6 @@
 // src/services/eventService.js
 //import axios from "axios";
-import api,{API_URL} from "./apiConfig";
-
+import api, { API_URL } from "./apiConfig";
 
 // Get all events
 export const getAllEvents = async () => {
@@ -15,15 +14,14 @@ export const getAllEvents = async () => {
 };
 
 export const getApprovedEvents = async () => {
-  try{
-    const res = await api.get(`events`)
+  try {
+    const res = await api.get(`events`);
     return res.data;
-  }catch(err){
-    console.error("Error Fetching App Events",err)
+  } catch (err) {
+    console.error("Error Fetching App Events", err);
     throw err;
   }
-}
-
+};
 
 // Get event by ID (example)
 export const getEventById = async (id) => {
@@ -36,83 +34,87 @@ export const getEventById = async (id) => {
   }
 };
 
-
 //search by location and event name
-export const searchEvents = async (title, location) => {
-  try{
-    const res = await api.get('/search',{
-      params: {title, location}
+export const searchEvents = async (data) => {
+  try {
+    const res = await api.get("/search", {
+      params: { title: data },
     });
-    return res.data;
-  }catch(err){
+    const searchitem = res.data;
+    console.log(searchitem);
+    if (searchitem.length === 0) {
+      const res = await api.get("/search", {
+        params: { location: data },
+      });
+      console.log(res.data);
+      return res.data;
+    }
+    return searchitem;
+  } catch (err) {
     console.error("Error while searching event OR event not found", err);
     throw err;
   }
-}
+};
 
 //organizer
 //`${EVENTS_API}`
 export const getOrgEvents = async () => {
-  try{
+  try {
     const res = await api.get(`/org/events`);
     return res.data;
-  }catch(err){
+  } catch (err) {
     console.error("Error fetching Org event:", err);
     throw err;
   }
-}
+};
 
 export const createEvent = async (FormData) => {
-  try{
-    const res = await api.post(`/event/create`, FormData)
+  try {
+    const res = await api.post(`/event/create`, FormData);
     return res.data;
-  }catch(err){
-    console.error("Error Creating Event", err)
+  } catch (err) {
+    console.error("Error Creating Event", err);
     throw err;
   }
-} 
+};
 
-
-export const updateEvent = async (id,FormData) => {
-  try{
-    const res = await api.put(`/event/${id}`, FormData)
+export const updateEvent = async (id, FormData) => {
+  try {
+    const res = await api.put(`/event/${id}`, FormData);
     return res.data;
-  }catch(err){
+  } catch (err) {
     console.error("Error Updating Event", err);
     throw err;
   }
-}
-
+};
 
 // admin
 export const updateEventStatus = async (id, status) => {
-  try{
+  try {
     const res = await api.patch(`/admin/events/${id}/status?status=${status}`);
     return res.data;
-  }catch(err){
+  } catch (err) {
     console.error("Error updating event", err);
     throw err;
   }
-}
+};
 
 export const getPendingEvent = async () => {
-  try{
-    const res = await api.get('admin/events/pending');
+  try {
+    const res = await api.get("admin/events/pending");
     return res.data;
-  }catch(err){
-    console.error("Error getPending Event", err)
+  } catch (err) {
+    console.error("Error getPending Event", err);
     throw err;
   }
-}
+};
 
 export const deleteEvent = async (id) => {
-  try{
+  try {
     const res = await api.delete(`/event/delete/${id}`);
     return res.data;
-  }catch(err){
-    console.error("Error deleting event",err);
+  } catch (err) {
+    console.error("Error deleting event", err);
     throw err;
   }
-}
-
-
+};

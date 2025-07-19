@@ -1,0 +1,47 @@
+.success-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.success-popup {
+  background: white;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  max-width: 400px;
+  animation: popupFadeIn 0.3s ease-in-out;
+}
+
+.success-popup button {
+  margin-top: 15px;
+  padding: 8px 16px;
+  background-color: #28a745;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.success-popup button:hover {
+  background-color: #218838;
+}
+
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

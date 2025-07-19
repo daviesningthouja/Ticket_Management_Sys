@@ -47,11 +47,11 @@ public partial class TmsContext : DbContext
 
             entity.HasOne(d => d.Event).WithMany(p => p.Tickets)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Tickets__EventId__31EC6D26");
+                .HasConstraintName("FK_Tickets_Events");
 
             entity.HasOne(d => d.User).WithMany(p => p.Tickets)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Tickets__UserId__30F848ED");
+                .HasConstraintName("FK_Tickets_Users");
         });
 
         modelBuilder.Entity<User>(entity =>
