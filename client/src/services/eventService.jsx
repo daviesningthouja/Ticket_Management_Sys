@@ -13,6 +13,15 @@ export const getAllEvents = async () => {
   }
 };
 
+export const getLastestEventSale = async(eventId) => {
+  try{
+    const response = await api.get(`latest-buyers/${eventId}`);
+    return response.data;
+  }catch(err){
+    console.error("Error fetching Lastest events:", err);
+  }
+}
+
 export const getApprovedEvents = async () => {
   try {
     const res = await api.get(`events`);
@@ -88,10 +97,24 @@ export const updateEvent = async (id, FormData) => {
   }
 };
 
+export const getSalesReport = async () => {
+  try{
+    const res = await api.get('/tickets/sales-report')
+    //console.log(res);
+    console.log(res.data)
+    return res.data;
+  } catch (err){
+    console.error("Error getting sale reprot",err);
+    throw err
+  }
+}
+
 // admin
 export const updateEventStatus = async (id, status) => {
   try {
+    console.log(id,status)
     const res = await api.patch(`/admin/events/${id}/status?status=${status}`);
+    console.log(res)
     return res.data;
   } catch (err) {
     console.error("Error updating event", err);

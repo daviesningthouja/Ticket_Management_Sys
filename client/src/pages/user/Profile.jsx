@@ -6,12 +6,13 @@ import { NavLink, Outlet } from 'react-router-dom';
 import Loading from '../../components/Loading';
 import ChangePasswordPopup from '../../components/ChangePasswordPopup'; // 📌 Make sure path matches
 import Button from '../../components/Button';
+import { getUserRole } from '../../utils/authUtils';
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordPopup, setShowPasswordPopup] = useState(false);
-
+  const role = getUserRole();
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -52,11 +53,24 @@ const Profile = () => {
 
       <div className='profile-actions'>
         {/* full link pidraD ydba */}
-        <NavLink to='/user/profile/edit'>
-          <Button style='btn'>Edit Profile</Button>
-          {/* <Outlet/> */}
-        </NavLink>
-        <Button style='btn' onClick={() => setShowPasswordPopup(true)}>Change Password</Button>
+        {role === 'User' && <NavLink to='/user/profile/edit'>
+          <Button style=''>Edit Profile</Button>
+          
+        </NavLink>}
+        {role === 'Organizer'&& <NavLink to='/organizer/profile/edit'>
+          <Button style=''>Edit Profile</Button>
+         
+        </NavLink>}
+        {role === 'Admin' && <NavLink to='/admin/profile/edit'>
+          <Button style=''>Edit Profile</Button>
+         
+        </NavLink>}
+        {/* <NavLink to='/user/profile/edit'>
+          <Button style=''>Edit Profile</Button>
+          
+        </NavLink> */}
+        {/* <Outlet/> */}
+        <Button style='' onClick={() => setShowPasswordPopup(true)}>Change Password</Button>
       </div>
 
       {showPasswordPopup && (

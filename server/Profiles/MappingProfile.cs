@@ -31,9 +31,11 @@ namespace server.Profiles
             CreateMap<Ticket, TicketDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.Name))
                 .ForMember(dest => dest.EventTitle, opt => opt.MapFrom(src => src.Event.Title))
-                .ForMember(dest => dest.TicketNumber, opt => opt.MapFrom(src => src.TicketNo));
+                .ForMember(dest => dest.TicketNumber, opt => opt.MapFrom(src => src.TicketNo))
+                .ForMember(dest => dest.BookingTime, opt => opt.MapFrom(
+                    src => src.BookingTime.HasValue ? src.BookingTime.Value.ToUniversalTime().ToString("o"): null)); // ISO 8601 format
             CreateMap<BookTicketRequest, Ticket>();
-                
+
         }
     }
 }

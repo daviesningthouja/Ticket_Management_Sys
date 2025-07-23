@@ -19,6 +19,11 @@ import EditProfile from './pages/user/EditProfile';
 import LayoutDash from './pages/LayoutDash';
 import ManageEvents from './pages/organizer/ManageEvents';
 import EventDetail from './pages/organizer/EventDetail';
+import EventDetailT from './pages/organizer/EventDetailT';
+import CreateEvent from './pages/organizer/CreateEvent';
+import EditEvent from './pages/organizer/EditEvent';
+import SaleReport from './pages/organizer/SaleReport';
+import PendingEvents from './pages/admin/PendingEvents';
 
 function App() {
   return (
@@ -40,20 +45,33 @@ function App() {
             <Route path="profile/edit" element={<EditProfile/>}/>
             <Route path="my-tickets" element={<MyTickets/>} />
             <Route path='events' element={<UserEvents/>}/>
+            
           </Route>
         </Route>
         {/*Organizer*/}
         <Route element={<ProtectedRoute role="Organizer"/>}>
           <Route path='/organizer' element={<LayoutDash/>}>
-            <Route index path='dash' element={<OrganizerDashboard/>}/>
+            <Route index element={<OrganizerDashboard/>}/>
             <Route path="profile" element={<Profile/>}/>
+            <Route path="profile/edit" element={<EditProfile/>}/>
             <Route path="events" element={<ManageEvents/>}/>
-            <Route path='event/:id' element={<EventDetail/>}/>
+            <Route path='event/:id' element={<EventDetailT/>}/>
+            <Route path='event/:id/update' element={<EditEvent/>}/>
+            <Route path='event/create' element={<CreateEvent/>}/>
+            <Route path='sales-report' element={<SaleReport/>}/>
           </Route>
         </Route>
         {/*Admin*/}
-        <Route element={<ProtectedRoute role="Admin"/>}>\
-          <Route path='/admin' element={<LayoutDash/>}/>
+        <Route element={<ProtectedRoute role="Admin"/>}>
+          <Route path='/admin' element={<LayoutDash/>}>
+            <Route index element={<AdminDashboard/>}/>
+            <Route path="profile" element={<Profile/>}/>
+            <Route path="profile/edit" element={<EditProfile/>}/>
+            <Route path='events' element={<ManageEvents/>}/>
+            <Route path='event/:id' element={<EventDetailT/>}/>
+            <Route path='event/:id/update' element={<EditEvent/>}/>
+            <Route path='pending/events' element={<PendingEvents/>}/>
+          </Route>
         </Route>
 
         {/*404 Error*/}

@@ -20,7 +20,7 @@ const LayoutDash = () => {
         <header className="bg-white shadow p-4">
           <h1 className="text-xl font-semibold text-center">Welcome, {role}</h1>
         </header>
-        <main className="p-6 ">
+        <main className="p-6">
           <Outlet />
         </main>
       </div>

@@ -39,19 +39,17 @@ namespace server.Controllers
 
         [Route("book")]
         [HttpPost]
-        public async Task<ActionResult<TicketDto>> BookTicket([FromBody] BookTicketRequest request)
+        public async Task<ActionResult<List<TicketDto>>> BookTicket([FromBody] BookTicketRequest request)
         {
             var user = await _context.Users.FindAsync(request.UserId);
             var eventItem = await _context.Events.FindAsync(request.EventId);
+
             if (user == null || eventItem == null)
                 return NotFound("User or Event not found");
 
-
             var tickets = new List<Ticket>();
             decimal pricePerTicket = eventItem.Price;
-            decimal totalPrice = pricePerTicket * request.Quantity;
 
-            // Create a ticket for each quantity with its own ticket number
             for (int i = 0; i < request.Quantity; i++)
             {
                 var newTicket = new Ticket
@@ -59,17 +57,22 @@ namespace server.Controllers
                     UserId = request.UserId,
                     EventId = request.EventId,
                     BookingTime = DateTime.UtcNow,
-                    Quantity = 1, // each ticket = 1 quantity
+                    Quantity = 1,
                     TotalPrice = pricePerTicket,
                     TicketNo = GenerateTicketNumber()
                 };
+
                 tickets.Add(newTicket);
                 _context.Tickets.Add(newTicket);
             }
+
             await _context.SaveChangesAsync();
+
             var ticketDtos = tickets.Select(t => _mapper.Map<TicketDto>(t)).ToList();
-            return Ok(ticketDtos); // return all the booked ticket DTOs
+
+            return Ok(ticketDtos);
         }
+
 
         //this for org need for user 
         [Route("MyTicket")]
@@ -172,7 +175,7 @@ namespace server.Controllers
         }
 
 
-        
+
 
 
 

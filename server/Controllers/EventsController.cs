@@ -302,8 +302,8 @@ namespace server.Controllers
         [HttpDelete]
         public async Task<ActionResult> DeleteEvent(int id)
         {
-            if (!_currentUser.IsAdmin())
-                return Unauthorized("Need to be Admin");
+            if (!_currentUser.IsAdmin() && !_currentUser.IsOrganizer())
+                return Unauthorized("Need to be Admin or Organizer");
             var eventItem = await _context.Events.FindAsync(id);
             if (eventItem == null)
                 return NotFound();
@@ -312,7 +312,7 @@ namespace server.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
-        
+
 
         //new
         [HttpGet("event/{eventId}/latest-ticket")]
@@ -331,7 +331,7 @@ namespace server.Controllers
                     TicketNumber = t.TicketNo,
                     UserId = t.UserId,
                     EventId = t.EventId,
-                    BookingTime = t.BookingTime ?? DateTime.MinValue,
+                    BookingTime =t.BookingTime.HasValue ? t.BookingTime.Value.ToLocalTime() : DateTime.MinValue,
                     UserName = t.User.Name,
                     EventTitle = t.Event.Title,
                     Quantity = t.Quantity,
@@ -344,6 +344,8 @@ namespace server.Controllers
 
             return Ok(ticket);
         }
+
+
         [HttpGet("latest-buyers/{eventId}")]
         public async Task<IActionResult> GetLatestBuyersForEvent(int eventId)
         {
@@ -362,8 +364,42 @@ namespace server.Controllers
                 .OrderByDescending(x => x.LatestBookingTime)
                 .ToListAsync();
 
+                  foreach (var buyer in buyers)
+    {
+        buyer.LatestBookingTime = DateTime.SpecifyKind(buyer.LatestBookingTime, DateTimeKind.Utc);
+    }
             return Ok(buyers);
         }
+
+
+        //total revenue 
+        [HttpGet("tickets/sales-report")]
+[Authorize]                                    // ensure logged-in
+public async Task<ActionResult<IEnumerable<TicketDto>>> GetAllTicketsForCurrentOrganizer()
+{
+    var organizerId = _currentUser.GetUserId();
+
+    var tickets = await _context.Tickets
+        .Include(t => t.User)
+        .Include(t => t.Event)
+        .Where(t => t.Event.OrganizerId == organizerId)
+        .Select(t => new TicketDto
+        {
+            Id = t.Id,
+            TicketNumber = t.TicketNo,
+            UserId = t.UserId,
+            EventId = t.EventId,
+            BookingTime = t.BookingTime.HasValue ? t.BookingTime.Value.ToLocalTime() : DateTime.MinValue,
+            //BookingTime =(t => DateTime.SpecifyKind(buyer.LatestBookingTime, DateTimeKind.Utc))
+            UserName = t.User.Name,
+            EventTitle = t.Event.Title,
+            Quantity = t.Quantity,
+            TotalPrice = t.TotalPrice
+        })
+        .ToListAsync();
+
+    return Ok(tickets);
+}
 
         
     }

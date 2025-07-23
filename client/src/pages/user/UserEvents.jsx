@@ -3,7 +3,7 @@ import EventCard from '../../components/EventCard';
 import { getApprovedEvents, searchEvents } from '../../services/eventService';
 import EventSidebar from '../../components/EventSideBar';
 import TicketPurchaseSidebar from '../../components/TicketPurchaseSidebar';
-import BookingPopup from '../../components/BookingPopup';
+import Popup from '../../components/Popup';
 import Loading from '../../components/Loading';
 import '../../styles/user/userEvents.css';
 import { getUserId } from '../../utils/authUtils';
@@ -53,7 +53,7 @@ const UserEvents = () => {
       const formData = {
         userId: uID,
         eventId: selectedEvent.id,
-        quantity: quantity 
+        quantity: quantity ,   
       }
       console.log(formData);
       await bookTicket(formData);
@@ -123,7 +123,7 @@ const UserEvents = () => {
         />
       )}
 
-      {showPopup && <BookingPopup onClose={() => setShowPopup(false)} />}
+      {showPopup && <Popup h={'Booking Successfull ✅'} d={'Your ticket has been booked successfully!'} onClose={() => setShowPopup(false)} />}
     </div>
   );
 };

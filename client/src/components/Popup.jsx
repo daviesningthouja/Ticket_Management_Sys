@@ -2,16 +2,16 @@
 import React from 'react';
 import '../styles/component/bookingPopup.css';
 
-const BookingPopup = ({ onClose }) => {
+const Popup = ({ h,d,onClose }) => {
   return (
     <div className="booking-popup">
       <div className="popup-content">
-        <h3>Booking Successful ✅</h3>
-        <p>Your ticket has been booked successfully!</p>
+        {h && <h3>{h}</h3>}
+        {d && <p>{d}</p>}
         <button onClick={onClose}>Close</button>
       </div>
     </div>
   );
 };
 
-export default BookingPopup;
+export default Popup;
