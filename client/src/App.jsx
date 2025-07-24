@@ -24,6 +24,8 @@ import CreateEvent from './pages/organizer/CreateEvent';
 import EditEvent from './pages/organizer/EditEvent';
 import SaleReport from './pages/organizer/SaleReport';
 import PendingEvents from './pages/admin/PendingEvents';
+import ManageUser from './pages/admin/ManageUser';
+import UserDetail from './pages/admin/UserDetail';
 
 function App() {
   return (
@@ -67,10 +69,12 @@ function App() {
             <Route index element={<AdminDashboard/>}/>
             <Route path="profile" element={<Profile/>}/>
             <Route path="profile/edit" element={<EditProfile/>}/>
+            <Route path="users" element={<ManageUser/>} /> 
             <Route path='events' element={<ManageEvents/>}/>
             <Route path='event/:id' element={<EventDetailT/>}/>
             <Route path='event/:id/update' element={<EditEvent/>}/>
             <Route path='pending/events' element={<PendingEvents/>}/>
+            <Route path=':id/detail' element={<UserDetail/>}/>
           </Route>
         </Route>
 

@@ -10,8 +10,8 @@ const JTable = ({ events, onAction }) => {
   const closeDropdown = () => setActiveDropdown(null);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-200">
+    <div className={`overflow-x-hidden display w-full  ${activeDropdown != null ? 'h-dvh' : ''}`}>
+      <table className="min-w-full  bg-white border border-gray-200">
         <thead>
           <tr className="bg-gray-100">
             <th className="px-4 py-2 text-left text-sm font-semibold">#</th>
@@ -39,12 +39,12 @@ const JTable = ({ events, onAction }) => {
                   <div className="relative inline-block">
                     <button
                       onClick={() => toggleDropdown(event.id)}
-                      className="p-2 rounded hover:bg-gray-200"
+                      className="px-2 py-1 rounded hover:bg-gray-200"
                     >
                       ⋮
                     </button>
                     {activeDropdown === event.id && (
-                      <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
+                      <div className="absolute right-9 top-0.5  bg-white border rounded shadow z-10">
                         <button
                           onClick={() => {
                             onAction('Approved', event.id);

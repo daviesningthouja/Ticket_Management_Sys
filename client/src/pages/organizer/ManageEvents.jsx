@@ -34,6 +34,7 @@ const ManageEvents = () => {
     };
     fetchEvents();
   }, []);
+  
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);

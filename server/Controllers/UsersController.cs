@@ -100,6 +100,21 @@ namespace server.Controllers
             return Ok();
         }
 
+        // GET /api/events/search?title=xxx&location=yyy
+        [HttpGet("user/search")]
+        public async Task<ActionResult<IEnumerable<UserDto>>> SearchEvents([FromQuery] string? userName)
+        {
+            if (userName == null )
+                return BadRequest("At least one search parameter is required");
+            var query = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(userName))
+                query = query.Where(u => u.Name.Contains(userName) && u.Role != "Admin");
+
+            var users = await query.ToListAsync();
+            return Ok(_mapper.Map<IEnumerable<UserDto>>(users));
+        }
+
 
 
         [Route("users/list")]
@@ -108,7 +123,9 @@ namespace server.Controllers
         {
             if (!_currentUser.IsAdmin())
                 return Unauthorized("Needs Admin Permission");
-            var u = await _context.Users.ToListAsync();
+            var u = await _context.Users
+                        .Where(e => e.Role == "User" || e.Role == "Organizer")
+                        .ToListAsync();
             var users = _mapper.Map<IEnumerable<UserDto>>(u);
             return Ok(users);
             //return await _context.Users.ToListAsync();

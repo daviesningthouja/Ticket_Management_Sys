@@ -19,7 +19,7 @@ const sidebarLinks = {
   Admin: [
     { to: "/admin", label: "Admin Dashboard", matchPaths:["/admin", "/admin/"]},
     { to: "/admin/profile", label: "Profile",icon:<FaUser/> ,  matchPaths:["/admin/profile"] },
-    { to: "/admin/users", label: "Manage Users" },
+    { to: "/admin/users", label: "Manage Users", icon:<FaCogs/>, matchPaths:["/admin/users"] },
     { to: "/admin/events", label: "All Events", icon:<FaCalendarAlt/>, matchPaths:["/admin/events"]},
     { to: "/admin/pending/events", label: "Pending Event" },
     { to: "/admin/revenue", label: "Revenue" },

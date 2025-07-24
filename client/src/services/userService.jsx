@@ -12,6 +12,20 @@ export const getUserProfile = async () => {
     }
 }
 
+export const searchUser = async(data) => {
+    try{
+        const res = await api.get("/user/search",{
+            params: {userName : data}
+        })
+        const searchitem = res.data;
+        console.log(searchitem);
+        return searchitem;
+    }catch(err){
+    console.error("Error while searching event OR event not found", err);
+    throw err; 
+    }
+}
+
 export const editUserProfile = async (data) => {
     try{
         const res = await api.put('/user/profile/edit', data);
@@ -47,7 +61,7 @@ export const deleteUser = async (id) => {
 
 export const getUserList = async () =>{
     try{
-        const res = await api.delete(`/users/list`)
+        const res = await api.get(`/users/list`)
         return res.data;
     }catch(err){
         console.error("error while listing user", err);
@@ -57,7 +71,7 @@ export const getUserList = async () =>{
 
 export const getUserByID = async (id) =>{
     try{
-        const res = await api.delete(`/user/${id}`)
+        const res = await api.get(`/user/${id}`)
         return res.data;
     }catch(err){
         console.error("error while fetching user by ID", err);
