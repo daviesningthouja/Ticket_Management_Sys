@@ -299,11 +299,12 @@ namespace server.Controllers
         }
 
         [Route("event/delete/{id}")]
+        [Authorize(Roles = "Admin, Organizer")]
         [HttpDelete]
         public async Task<ActionResult> DeleteEvent(int id)
         {
-            if (!_currentUser.IsAdmin() && !_currentUser.IsOrganizer())
-                return Unauthorized("Need to be Admin or Organizer");
+           
+           
             var eventItem = await _context.Events.FindAsync(id);
             if (eventItem == null)
                 return NotFound();

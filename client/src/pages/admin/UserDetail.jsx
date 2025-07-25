@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import pfp from '../../assets/images.png';
 import UserCard from '../../components/UserCard';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteUser, getUserByID } from '../../services/userService';
 import Loading from '../../components/Loading'
-import { getTicketByID, getTicketByUserID, getUserTicket } from '../../services/ticketService';
+import { getTicketByUserID } from '../../services/ticketService';
 import DataTable from '../../components/Table';
 import Popup from '../../components/Popup';
 const UserDetail = () => {
@@ -63,6 +62,7 @@ const fetchUserTicket = async () => {
   
   useEffect(() => {
     Promise.all([fetchUser(), fetchUserTicket()]).finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[id]);
 
   const handleDelete = async (id) => {

@@ -1,4 +1,4 @@
-import { FaUser, FaTicketAlt, FaCalendarAlt, FaUsers, FaCogs } from "react-icons/fa";
+import { FaUser, FaTicketAlt, FaCalendarAlt, FaUsers, FaCogs,FaMoneyBill,FaAdn } from "react-icons/fa";
 
 
 const sidebarLinks = {
@@ -19,10 +19,10 @@ const sidebarLinks = {
   Admin: [
     { to: "/admin", label: "Admin Dashboard", matchPaths:["/admin", "/admin/"]},
     { to: "/admin/profile", label: "Profile",icon:<FaUser/> ,  matchPaths:["/admin/profile"] },
-    { to: "/admin/users", label: "Manage Users", icon:<FaCogs/>, matchPaths:["/admin/users"] },
-    { to: "/admin/events", label: "All Events", icon:<FaCalendarAlt/>, matchPaths:["/admin/events"]},
-    { to: "/admin/pending/events", label: "Pending Event" },
-    { to: "/admin/revenue", label: "Revenue" },
+    { to: "/admin/users", label: "Manage Users", icon:<FaCogs/>, matchPaths:["/admin/users", "/admin/:id/detail"] },
+    { to: "/admin/events", label: "All Events", icon:<FaCalendarAlt/>, matchPaths:["/admin/events" , "/admin/event/:id"]},
+    { to: "/admin/pending/events", label: "Pending Event", icon:<FaAdn/>, matchPaths:["/admin/pending/events"]},
+    { to: "/admin/revenue", label: "Revenue" , icon:<FaMoneyBill/>, matchpaths:["/admin/revenue"]},
   ],
 };
 

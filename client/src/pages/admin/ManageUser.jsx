@@ -11,7 +11,7 @@ const ManageUser = () => {
   const [filter, setFilter] = useState('all');
   const [users, setUsers] = useState([])
   const navigate = useNavigate();
-  const [popup, setPopup] = useState(false)
+  // const [popup, setPopup] = useState(false)
   const columns = [
     {
       header: 'User',
@@ -31,7 +31,7 @@ const ManageUser = () => {
       render: (user) => (
         <div className="flex gap-2">
           <Button style="bg-blue-500 text-white px-2 py-1 rounded text-sm" onClick={() => navigate(`/admin/${user.id}/detail`)}>Details</Button>
-          <Button style="bg-red-500 text-white px-2 py-1 rounded text-sm" onClick={()=> setPopup(true)}>Delete</Button>
+          {/* <Button style="bg-red-500 text-white px-2 py-1 rounded text-sm" onClick={()=> setPopup(true)}>Delete</Button> */}
         </div>
       ),
     },
@@ -40,7 +40,8 @@ const ManageUser = () => {
 
    useEffect(() => {
       fetchUsers();
-    }, []);
+      handleSearch();
+    }, [search]);
     
   const fetchUsers = async () => {
         try {
@@ -57,19 +58,20 @@ const ManageUser = () => {
         }
   };
 
-  const handleSearch = async (e) => {
-      e.preventDefault();
-      setLoading(true);
-      try {
-        const results = await searchUser(search);
-        setUsers(results);
-        setFilter('')
-        //setFilter('')
-      } catch (err) {
-        console.error("Search failed", err);
-      } finally {
-        setLoading(false);
-      }
+  const handleSearch = async (value) => {
+      if (!value.trim()) {
+    setFilter("all");
+    await fetchUsers();
+    return;
+  }
+
+  try {
+    const results = await searchUser(value);
+    setUsers(results);
+    setFilter(results.length === 0 ? 'all' : '');
+  } catch (err) {
+    console.error("Search failed", err);
+  }
     };
     
     const handleAllFilter = async () => {
@@ -94,17 +96,21 @@ const ManageUser = () => {
                 type="text"
                 placeholder="Search event"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {const value = e.target.value;
+    setSearch(value);
+    handleSearch(value);}}
               />
-              <button onClick={handleSearch} type="submit">Search</button>
-                {search && (
+                {search ? (
                   <button
-                    onClick={handleAllFilter}
-                    className="px-3 py-1 bg-gray-300 rounded"
+                  onClick={handleAllFilter}
+                  className="px-3 py-1 bg-gray-300 rounded"
                   >
                     Clear Search
                   </button>
-                )}
+                ) : 
+                
+                <button onClick={handleSearch} type="submit">Search</button>
+                }
       
                 <Button
                   onClick={handleAllFilter}

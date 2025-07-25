@@ -9,6 +9,7 @@ import {
 import DataTable from "../../components/Table";
 import EventCard from "../../components/EventCard";
 import { getUserRole } from "../../utils/authUtils";
+import Popup from "../../components/Popup";
 //import { toast } from 'react-hot-toast'; // or any toast lib you use
 
 const EventDetailT = () => {
@@ -18,6 +19,7 @@ const EventDetailT = () => {
   const [event, setEvent] = useState(null);
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [popup, setPopup]= useState(false);
   const role = getUserRole();
   const columns = [
     { header: "Buyer", accessor: "userName" },
@@ -55,13 +57,20 @@ const EventDetailT = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Delete this event? This cannot be undone.")) return;
+    // if (!window.confirm("Delete this event? This cannot be undone.")) return;
+    setLoading(true)
     try {
       await deleteEvent(id);
-      console.log("Event deleted");
-      navigate("/organizer/events");
+      if(role === "Organizer"){
+        console.log("Event deleted by O");
+        navigate("/organizer/events");
+      }else{
+        navigate("/admin/events");
+      }
     } catch (err) {
       console.log("Could not delete event", err);
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -71,10 +80,11 @@ const EventDetailT = () => {
 
   if (loading)
     return <p className="p-6 text-center">Loading event details...</p>;
-
+  
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
-      {/* Header */}
+      {popup ? (  <Popup h={'Delete this event?'} d={'This cannot be undone.'}onCancel={()=>setPopup(false)} onConfirm={()=>{handleDelete()}}/>) : ( <>
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-2xl font-bold text-gray-900">Event Details</h1>
 
@@ -82,28 +92,29 @@ const EventDetailT = () => {
           <button
             onClick={fetchSales}
             className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-md"
-          >
+            >
             Refresh sales
           </button>
           {role=="Organizer" ? <>
           <button
             onClick={() => navigate(`/organizer/event/${id}/update`)}
             className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
+            >
             Edit
           </button>
 
           <button
-            onClick={handleDelete}
+            onClick={() => setPopup(true)}
             className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
-          >
+            >
             Delete
           </button>
           </> : <>
+       
           <button
-            onClick={handleDelete}
+            onClick={() => setPopup(true)}
             className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
-          >
+            >
             Delete
           </button>
           </>
@@ -111,14 +122,16 @@ const EventDetailT = () => {
         </div>
       </div>
 
-      {/* Card */}
+
       <EventCard event={event} />
 
-      {/* Recent Sales */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Recent Sales</h2>
         <DataTable columns={columns} data={sales} />
       </section>
+      </>
+      )
+    }
     </div>
   );
 };
