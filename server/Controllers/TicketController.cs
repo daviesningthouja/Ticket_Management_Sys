@@ -100,11 +100,10 @@ namespace server.Controllers
 
 
         [Route("user/{userId}")]
+        [Authorize(Roles = "Admin,Organiner")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TicketDto>>> GetUserTickets([FromRoute] int userId)
         {
-            if (!_currentUser.IsOrganizer())
-                return Unauthorized("Needs to be Organizer");
             var u = await _context.Users.FindAsync(userId);
             if (u == null)
                 return NotFound(new { message = "User not found" });
@@ -112,18 +111,30 @@ namespace server.Controllers
             var t = await _context.Tickets
                 .Where(t => t.UserId == userId)
                 .Include(t => t.Event)
+                .Select(t => new TicketDto
+                {
+                    Id = t.Id,
+                    TicketNumber = t.TicketNo,
+                    UserId = t.UserId,
+                    EventId = t.EventId,
+                    BookingTime =t.BookingTime.HasValue ? t.BookingTime.Value.ToLocalTime() : DateTime.MinValue,
+                    UserName = t.User.Name,
+                    EventTitle = t.Event.Title,
+                    Quantity = t.Quantity,
+                    TotalPrice = t.TotalPrice
+                })
                 .ToListAsync();
-            var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(t);
-            return Ok(ticketDtos);
+            //var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(t);
+            return Ok(t);
 
         }
 
         [Route("event/{eventId}")]
+        [Authorize(Roles = "Admin,Organiner")]
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TicketDto>>> GetEventTickets([FromRoute] int eventId)
         {
-            if (!_currentUser.IsOrganizer())
-                return Unauthorized("Needs to be Organizer");
             var e = await _context.Events.FindAsync(eventId);
             if (e == null)
                 return NotFound(new { message = "Event not found" });
@@ -132,6 +143,7 @@ namespace server.Controllers
                 .Where(t => t.EventId == eventId)
                 .Include(t => t.User)
                 .ToListAsync();
+
             var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(tickets);
 
             return Ok(ticketDtos);

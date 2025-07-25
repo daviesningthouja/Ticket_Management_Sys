@@ -11,13 +11,13 @@ const ManageUser = () => {
   const [filter, setFilter] = useState('all');
   const [users, setUsers] = useState([])
   const navigate = useNavigate();
-
+  const [popup, setPopup] = useState(false)
   const columns = [
     {
       header: 'User',
       render: (user) => (
         <img
-          src={user.pfpUrl === null ? Pfp :getImageUrl(user.pfpUrl)}
+          src={user.pfpUrl === null || user.pfpUrl== "" ? Pfp :getImageUrl(user.pfpUrl)}
           alt="User"
           className="h-10 w-10 rounded-full object-cover"
         />
@@ -31,7 +31,7 @@ const ManageUser = () => {
       render: (user) => (
         <div className="flex gap-2">
           <Button style="bg-blue-500 text-white px-2 py-1 rounded text-sm" onClick={() => navigate(`/admin/${user.id}/detail`)}>Details</Button>
-          <Button style="bg-red-500 text-white px-2 py-1 rounded text-sm">Delete</Button>
+          <Button style="bg-red-500 text-white px-2 py-1 rounded text-sm" onClick={()=> setPopup(true)}>Delete</Button>
         </div>
       ),
     },

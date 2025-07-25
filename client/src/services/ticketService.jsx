@@ -28,6 +28,7 @@ export const getUserTicket = async () => {
 export const getTicketByUserID = async (userId) => {
     try{
         const res = await api.get(`/ticket/user/${userId}`);
+        console.log(res.data)
         return res.data;
     }catch(err){
         console.error('error while fetching ticket by userid', err);

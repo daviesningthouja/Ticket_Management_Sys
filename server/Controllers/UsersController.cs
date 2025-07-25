@@ -131,11 +131,10 @@ namespace server.Controllers
             //return await _context.Users.ToListAsync();
         }
         [Route("user/{id}")]
+        [Authorize(Roles = "Organizer,Admin")]
         [HttpGet]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            if (!_currentUser.IsOrganizer() || !_currentUser.IsAdmin())
-                return Unauthorized("Needs to be organizer or admin");
             var user = await _context.Users
                 .FindAsync(id);
 

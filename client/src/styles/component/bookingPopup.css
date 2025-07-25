@@ -1,4 +1,4 @@
-.booking-popup {
+ .booking-popup {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -10,7 +10,7 @@
   z-index: 1100;
   text-align: center;
   animation: fadeInScale 0.3s ease-in-out;
-}
+} 
 
 @keyframes fadeInScale {
   from {
@@ -26,9 +26,9 @@
 .booking-popup button {
   margin-top: 20px;
   padding: 10px 20px;
-  background-color: #3498db;
+  /* background-color: #3498db; */
   border: none;
   color: #fff;
-  border-radius: 4px;
+  /* border-radius: 4px; */
   cursor: pointer;
-}
+} 
