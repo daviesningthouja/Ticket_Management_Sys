@@ -41,12 +41,12 @@ namespace server.Controllers
                 .Include(e => e.Organizer)
                 .ToListAsync();
 
-            
+
             var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
-            foreach (var ev in eventDtos)
-{
-    ev.EventDate = DateTime.SpecifyKind(ev.EventDate, DateTimeKind.Utc);
-}
+            // foreach (var ev in eventDtos)
+            // {
+            //     ev.EventDate = DateTime.SpecifyKind(ev.EventDate, DateTimeKind.Utc);
+            // }
 
             return Ok(eventDtos);
         }
@@ -196,7 +196,7 @@ namespace server.Controllers
             var user = await _context.Users.FindAsync(oID);
 
             var eventItem = _mapper.Map<Event>(dto);
-            eventItem.EventDate = DateTime.SpecifyKind(dto.EventDate, DateTimeKind.Local).ToUniversalTime();
+            // eventItem.EventDate = DateTime.SpecifyKind(dto.EventDate, DateTimeKind.Local).ToUniversalTime();
 
 
             // dto.OrganizerId = oID;
@@ -265,10 +265,10 @@ namespace server.Controllers
             // Check if a valid date is sent (not the default DateTime.MinValue)
             if (dto.EventDate > DateTime.MinValue)
                 eventItem.EventDate = dto.EventDate;
-            else
-            {
-                eventItem.EventDate = DateTime.SpecifyKind(dto.EventDate, DateTimeKind.Local).ToUniversalTime();
-            }
+            // else
+            // {
+            //     eventItem.EventDate = DateTime.SpecifyKind(dto.EventDate, DateTimeKind.Local).ToUniversalTime();
+            // }
 
             // Only update price if it is not 0 (you can change this logic as per your requirement)
             if (dto.Price != 0)
@@ -467,7 +467,7 @@ namespace server.Controllers
                 pendingEvents
             });
         }
-        
+
         [HttpPost("admin/update-statuses")]
         public async Task<IActionResult> UpdateEventAndTicketStatuses()
         {

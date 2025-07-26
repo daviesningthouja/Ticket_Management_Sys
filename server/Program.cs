@@ -9,10 +9,15 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using server.Services;
+using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
+
 // Registration of services
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new DateTimeConverterUsingDateTimeParse());
+});
 
 // AutoMapper registration ✅
 builder.Services.AddAutoMapper(cfg =>
