@@ -26,6 +26,7 @@ import SaleReport from './pages/organizer/SaleReport';
 import PendingEvents from './pages/admin/PendingEvents';
 import ManageUser from './pages/admin/ManageUser';
 import UserDetail from './pages/admin/UserDetail';
+import AdminRevenue from './pages/admin/AdminRevenue';
 
 function App() {
   return (
@@ -75,6 +76,7 @@ function App() {
             <Route path='event/:id/update' element={<EditEvent/>}/>
             <Route path='pending/events' element={<PendingEvents/>}/>
             <Route path=':id/detail' element={<UserDetail/>}/>
+            <Route path='revenue' element={<AdminRevenue/>}/>
           </Route>
         </Route>
 

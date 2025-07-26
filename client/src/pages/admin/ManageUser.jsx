@@ -59,6 +59,7 @@ const ManageUser = () => {
   };
 
   const handleSearch = async (value) => {
+    setLoading(true)
       if (!value.trim()) {
     setFilter("all");
     await fetchUsers();
@@ -69,8 +70,11 @@ const ManageUser = () => {
     const results = await searchUser(value);
     setUsers(results);
     setFilter(results.length === 0 ? 'all' : '');
+    
   } catch (err) {
     console.error("Search failed", err);
+  }finally{
+    setLoading(false)
   }
     };
     

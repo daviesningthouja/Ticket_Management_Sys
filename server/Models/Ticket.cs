@@ -26,6 +26,9 @@ public partial class Ticket
     [Column(TypeName = "decimal(10, 2)")]
     public decimal? TotalPrice { get; set; }
 
+    [StringLength(20)]
+    public string? Status { get; set; }
+
     [ForeignKey("EventId")]
     [InverseProperty("Tickets")]
     public virtual Event Event { get; set; } = null!;

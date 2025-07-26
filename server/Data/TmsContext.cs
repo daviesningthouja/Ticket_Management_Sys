@@ -44,6 +44,7 @@ public partial class TmsContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Tickets__3214EC075E978C4F");
 
             entity.Property(e => e.BookingTime).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Status).HasDefaultValue("Valid");
 
             entity.HasOne(d => d.Event).WithMany(p => p.Tickets)
                 .OnDelete(DeleteBehavior.ClientSetNull)

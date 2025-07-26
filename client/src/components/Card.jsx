@@ -3,7 +3,7 @@ import { getImageUrl } from '../services/apiConfig';
 
 const Card = ({ title, icon,img,alt,  value, description, className = '' }) => {
   return (
-    <div className={`${className}` ?  className : `bg-white shadow-md rounded-lg p-5 transition hover:shadow-xl`}>
+    <div className={`${className}` ?  `${className} bg-white shadow-md rounded-lg p-5 transition hover:shadow-xl`  : `bg-white shadow-md rounded-lg p-5 transition hover:shadow-xl`}>
       <div className="flex items-center gap-4 mb-4">
         {icon && <div className="text-blue-500 text-3xl">{icon}</div>}
         <h3 className="text-lg font-semibold">{title}</h3>

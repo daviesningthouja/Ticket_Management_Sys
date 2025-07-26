@@ -41,7 +41,7 @@ public partial class Event
 
     [InverseProperty("Event")]
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+
     [NotMapped]
     public decimal TotalRevenue => Tickets?.Sum(t => t.TotalPrice) ?? 0;
-
 }
