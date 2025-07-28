@@ -56,7 +56,7 @@ namespace server.Controllers
         {
             var events = await _context.Events
                 .Include(e => e.Organizer)
-                .Where(e => e.Status == "Approved")
+                .Where(e => e.Status == "Approved" || e.Status == "Completed")
                 .ToListAsync();
             var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
             return Ok(eventDtos);
@@ -90,10 +90,10 @@ namespace server.Controllers
                 var query = _context.Events.Include(e => e.Organizer).AsQueryable();
 
                 if (!string.IsNullOrEmpty(title))
-                    query = query.Where(e => e.Title.Contains(title) && e.Status == "Approved");
+                    query = query.Where(e => e.Title.Contains(title));
 
                 if (!string.IsNullOrEmpty(location))
-                    query = query.Where(e => e.Location != null && e.Location.Contains(location) && e.Status == "Approved");
+                    query = query.Where(e => e.Location != null && e.Location.Contains(location));
 
                 var events = await query.ToListAsync();
                 return Ok(_mapper.Map<IEnumerable<EventDto>>(events));
@@ -468,6 +468,50 @@ namespace server.Controllers
             });
         }
 
+        [HttpGet("organizer/dashboard")]
+public async Task<IActionResult> GetOrganizerDashboard()
+{
+    var uID = _currentUser.GetUserId();
+    // 1. Approved Events Count
+            var approvedCount = await _context.Events
+        .Where(e => e.OrganizerId == uID && e.Status == "Approved")
+        .CountAsync();
+
+    // 2. Pending Events Count
+    var pendingCount = await _context.Events
+        .Where(e => e.OrganizerId == uID && e.Status == "Pending")
+        .CountAsync();
+
+    // 3. Total Tickets Sold (sum of quantities for organizer's events)
+    var ticketSold = await _context.Tickets
+        .Where(t => t.Event.OrganizerId == uID)
+        .SumAsync(t => (int?)t.Quantity ?? 0);
+
+    // 4. Last 5 Ticket Sales
+    var recentTickets = await _context.Tickets
+        .Where(t => t.Event.OrganizerId == uID)
+        .OrderByDescending(t => t.BookingTime)
+        .Take(5)
+        .Select(t => new
+        {
+            TicketNo = t.TicketNo,
+            EventTitle = t.Event.Title,
+            UserName = t.User.Name,
+            Quantity = t.Quantity,
+            BookingTime = t.BookingTime
+        })
+        .ToListAsync();
+
+    return Ok(new
+    {
+        approvedEventCount = approvedCount,
+        pendingEventCount = pendingCount,
+        totalTicketsSold = ticketSold,
+        recentTickets = recentTickets
+    });
+}
+
+
         [HttpPost("admin/update-statuses")]
         public async Task<IActionResult> UpdateEventAndTicketStatuses()
         {
@@ -495,12 +539,25 @@ namespace server.Controllers
                 ticket.Status = "Expired";
             }
 
+            var upcomingEvent = await _context.Events
+                .Where(e => e.EventDate > today && e.Status == "Approved")
+                .ToListAsync();
+            var upcomingEventIds = upcomingEvent.Select(e => e.Id).ToList();
+            var validTickets = await _context.Tickets
+                .Where(t => upcomingEventIds.Contains(t.EventId) && t.Status != "Expired")
+                .ToListAsync();
+            foreach (var ticket in validTickets)
+            {
+                ticket.Status = "Valid";
+            }
+
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 UpdatedEvents = pastEvents.Count,
-                ExpiredTickets = relatedTickets.Count
+                ExpiredTickets = relatedTickets.Count,
+                ValidTickets = validTickets.Count
             });
         }
 

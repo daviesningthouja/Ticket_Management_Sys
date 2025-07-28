@@ -11,5 +11,6 @@ namespace server.DTOs
         public string? EventTitle { get; set; }
         public decimal? TotalPrice { get; set; }
         public int? Quantity { get; set; }
+        public string? Status { get; set; }
     }
 }

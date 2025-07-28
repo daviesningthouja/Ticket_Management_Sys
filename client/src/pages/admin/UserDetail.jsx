@@ -16,6 +16,7 @@ const UserDetail = () => {
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
+  const [filteredTickets, setFilteredTickets] = useState([])
   const [filter, setFilter] = useState('all');
   const [popup, setPopup] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,20 +25,31 @@ const UserDetail = () => {
     { header: 'Event', accessor: 'eventTitle' },
     { header: 'Ticket No', accessor: 'ticketNumber' },
     {
-      header: 'Date',
+      header: 'Date & Time',
       accessor: 'bookingTime',
       render: row => new Date(row.bookingTime).toLocaleString(undefined, {
+         year: 'numeric',
+    month: 'short',   // or 'long' for full month
+    day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         hour12: true,
       })
     },
-    { header: 'Price', accessor: 'totalPrice', render: r => `$${r.totalPrice.toFixed(2)}` }
+    { header: 'Price', accessor: 'totalPrice', render: r => `$${r.totalPrice.toFixed(2)}` },
+    {header: 'Status', accessor : 'status'} 
   ];
 
   const eventColumns = [
     { header: 'Title', accessor: 'title' },
-    { header: 'Date', accessor: 'eventDate' },
+    { header: 'Date & Time', accessor: 'eventDate', render: row => new Date(row.eventDate).toLocaleString(undefined, {
+         year: 'numeric',
+    month: 'short',   // or 'long' for full month
+    day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) },
     { header: 'Location', accessor: 'location' },
     { header: 'Status', accessor: 'status' },
   ];
@@ -53,8 +65,10 @@ const UserDetail = () => {
 
   const fetchUserTickets = async () => {
     try {
-      const userTickets = await getTicketByUserID(id);
+      const allTickets = await getTicketByUserID(id);
+      const userTickets = allTickets.filter(t => t.userId == id);
       setTickets(userTickets);
+      setFilteredTickets(userTickets);
     } catch (err) {
       console.error('Error while fetching tickets', err);
     }
@@ -96,10 +110,18 @@ const UserDetail = () => {
 
   const handleFilterChange = (status) => {
     setFilter(status);
-    if (status === 'all') {
-      setFilteredEvents(events);
-    } else {
-      setFilteredEvents(events.filter(ev => ev.status.toLowerCase() === status));
+    if(user?.role == 'Organizer'){
+      if (status === 'all') {
+        setFilteredEvents(events);
+      } else {
+        setFilteredEvents(events.filter(ev => ev.status.toLowerCase() === status));
+      }
+    }else{
+      if (status === 'all') {
+        setFilteredTickets(tickets);
+      } else {
+        setFilteredTickets(tickets.filter(t => t.status.toLowerCase() === status));
+      }
     }
   };
 
@@ -144,8 +166,19 @@ const UserDetail = () => {
             </div>
           ) : (
             <div>
-              <h2 className="text-xl font-semibold mb-3">User Tickets</h2>
-              <DataTable columns={ticketColumns} data={tickets} />
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-xl font-semibold">User Tickets</h2>
+                <select
+                  value={filter}
+                  onChange={(e) => handleFilterChange(e.target.value)}
+                  className="px-3 py-1 border rounded"
+                >
+                  <option value="all">All</option>
+                  <option value="valid">Valid</option>
+                  <option value="expired">Expired</option>
+                </select>
+              </div>
+              <DataTable columns={ticketColumns} data={filteredTickets} />
             </div>
           )}
         </div>

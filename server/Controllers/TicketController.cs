@@ -117,11 +117,12 @@ namespace server.Controllers
                     TicketNumber = t.TicketNo,
                     UserId = t.UserId,
                     EventId = t.EventId,
-                    BookingTime =t.BookingTime.HasValue ? t.BookingTime.Value.ToLocalTime() : DateTime.MinValue,
+                    BookingTime = t.BookingTime.HasValue ? t.BookingTime.Value.ToLocalTime() : DateTime.MinValue,
                     UserName = t.User.Name,
                     EventTitle = t.Event.Title,
                     Quantity = t.Quantity,
-                    TotalPrice = t.TotalPrice
+                    TotalPrice = t.TotalPrice,
+                    Status = t.Status
                 })
                 .ToListAsync();
             //var ticketDtos = _mapper.Map<IEnumerable<TicketDto>>(t);
@@ -187,8 +188,44 @@ namespace server.Controllers
         }
 
 
+        [HttpGet("revenue/summary")]
+public async Task<IActionResult> GetRevenueSummary([FromQuery] string range = "30days")
+{
+    DateTime startDate = range switch
+    {
+        "7d" => DateTime.Now.AddDays(-7),
+        "30d" => DateTime.Now.AddDays(-30),
+        "1y" => new DateTime(DateTime.Now.Year, 1, 1),
+        "all" or _ => new DateTime(1753, 1, 1) // ✅ use SQL-safe minimum date
+    };
 
+    var filteredTickets = await _context.Tickets
+        .Include(t => t.Event)
+            .ThenInclude(e => e.Organizer)
+        .Where(t => t.Event.EventDate >= startDate )
+        .ToListAsync();
 
+    var totalRevenue = filteredTickets.Sum(t => t.TotalPrice);
+    int totalTicketsSold = filteredTickets.Count;
+
+    var organizerRevenues = filteredTickets
+        .GroupBy(t => new { t.Event.Organizer.Name, t.Event.Title })
+        .Select(g => new
+        {
+            organizerName = g.Key.Name,
+            eventName = g.Key.Title,
+            ticketsSold = g.Count(),
+            revenue = g.Sum(t => t.TotalPrice)
+        })
+        .ToList();
+
+    return Ok(new
+    {
+        totalRevenue,
+        totalTicketsSold,
+        organizerRevenues
+    });
+}
 
 
     }

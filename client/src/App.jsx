@@ -42,7 +42,7 @@ function App() {
         {/* Protected Route */}
         {/*User*/}
         <Route element={<ProtectedRoute role="User"/>}>
-          <Route path='/user' element={<UserDashboard/>}>
+          <Route path='/user' element={<LayoutDash/>}>
             <Route index element={<UserIndex/>}/>
             <Route path="profile" element={<Profile />} />
             <Route path="profile/edit" element={<EditProfile/>}/>

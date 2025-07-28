@@ -5,7 +5,7 @@ const sidebarLinks = {
   User: [
     { to: "/user", label: "Dashboard Home" },
     { to: "/user/profile", label: "Profile" },
-    { to: "/user/edit", label: "Edit Profile" },
+    { to: "/user/profile/edit", label: "Edit Profile" },
     { to: "/user/my-tickets", label: "My Tickets" },
     { to: "/user/events", label: "Browse Events" },
   ],
