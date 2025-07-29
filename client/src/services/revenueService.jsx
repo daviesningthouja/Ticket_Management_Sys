@@ -10,3 +10,8 @@ export const getRevenueSummary = async () => {
         throw err;
     }
 }
+
+export const getAllRevenueSummary = async (range = '30d') => {
+  const res = await api.get(`ticket/revenue/summary?range=${range}`);
+  return res.data;
+};
