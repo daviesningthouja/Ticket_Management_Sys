@@ -43,22 +43,46 @@ namespace server.Controllers
 
 
             var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
-            // foreach (var ev in eventDtos)
-            // {
-            //     ev.EventDate = DateTime.SpecifyKind(ev.EventDate, DateTimeKind.Utc);
-            // }
-
             return Ok(eventDtos);
         }
-        [Route("events")]
+        [Route("event")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EventDto>>> GetEvents()
+        public async Task<ActionResult<IEnumerable<EventDto>>> GetEvent()
         {
             var events = await _context.Events
                 .Include(e => e.Organizer)
-                .Where(e => e.Status == "Approved" || e.Status == "Completed")
+                .Include(e => e.TicketCategories)
+                    .ThenInclude(tc => tc.Seats)
+                //.Where(e => e.Status == "Approved" || e.Status == "Completed")
                 .ToListAsync();
-            var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
+
+            var eventDtos = _mapper.Map<List<EventDto>>(events);
+
+            foreach (var dto in eventDtos)
+            {
+                var matchingEvent = events.First(e => e.Id == dto.Id);
+
+                // ✅ AvailableSeats
+                dto.AvailableTickets = matchingEvent.TicketCategories
+                    .SelectMany(tc => tc.Seats)
+                    .Count(s => s.IsBooked != true);
+
+                // ✅ StartingPrice
+                dto.StartingPrice = matchingEvent.TicketCategories
+                    .OrderBy(tc => tc.Price)
+                    .Select(tc => (decimal?)tc.Price)
+                    .FirstOrDefault();
+            }
+            var tcCount = await _context.TicketCategories.CountAsync(tc => tc.EventId == 1);
+            Console.WriteLine($"TicketCategories: {tcCount}");
+            var seatCount = await _context.Seats
+                .Where(s => s.Category.EventId == 1)
+                .CountAsync();
+            Console.WriteLine($"Total Seats: {seatCount}");
+            var availableSeatCount = await _context.Seats
+                .Where(s => s.Category.EventId == 1 && (s.IsBooked == null || s.IsBooked == false))
+                .CountAsync();
+            Console.WriteLine($"Available Seats: {availableSeatCount}");
             return Ok(eventDtos);
         }
 
@@ -76,6 +100,37 @@ namespace server.Controllers
             var eventDto = _mapper.Map<EventDto>(eventItem);
             return Ok(eventDto);
         }
+
+        private bool EventExists(int id)
+        {
+            return _context.Events.Any(e => e.Id == id);
+        }
+
+        //New Update 
+        [Route("event/{eventId}/categories")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TicketCategoryDto>>> GetEventCategories(int eventId)
+        {
+            var categories = await _context.TicketCategories
+                .Where(tc => tc.EventId == eventId)
+                .Include(tc => tc.Seats)
+                .ToListAsync();
+
+            return Ok(_mapper.Map<IEnumerable<TicketCategoryDto>>(categories));
+        }
+
+        [HttpGet("event/{eventId}/available-seats")]
+        public async Task<IActionResult> GetAvailableSeats(int eventId)
+        {
+            var seats = await _context.Seats
+                .Include(s => s.Category)
+                .Where(s => s.Category.EventId == eventId && (s.IsBooked == null || s.IsBooked == false))
+                .ToListAsync();
+
+            return Ok(_mapper.Map<IEnumerable<SeatDto>>(seats));
+        }
+
+
 
 
         // GET /api/events/search?title=xxx&location=yyy
@@ -135,24 +190,6 @@ namespace server.Controllers
             var eventDtos = _mapper.Map<IEnumerable<EventDto>>(events);
             return Ok(eventDtos);
         }
-
-        [HttpGet("my")]
-        [Authorize(Roles = "Organizer,Admin")]
-        public async Task<ActionResult<IEnumerable<AdminDto>>> GetMyEvents()
-        {
-            var userId = _currentUser.GetUserId();
-
-            var events = await _context.Events
-                .Where(e => e.OrganizerId == userId)
-                .Include(e => e.Organizer)
-                .Include(e => e.Tickets)
-                .ToListAsync();
-
-            var adminDtos = _mapper.Map<IEnumerable<AdminDto>>(events);
-            return Ok(adminDtos);
-        }
-
-
 
         [Route("event/create")]
         [HttpPost]
@@ -271,8 +308,7 @@ namespace server.Controllers
             // }
 
             // Only update price if it is not 0 (you can change this logic as per your requirement)
-            if (dto.Price != 0)
-                eventItem.Price = dto.Price;
+
 
             // Only update if a new image was uploaded
             if (!string.IsNullOrEmpty(ImgUrl))
@@ -325,10 +361,6 @@ namespace server.Controllers
             var pendingEventDtos = _mapper.Map<IEnumerable<EventDto>>(pendingEvents);
             return Ok(pendingEventDtos);
         }
-        private bool EventExists(int id)
-        {
-            return _context.Events.Any(e => e.Id == id);
-        }
 
         [Route("event/delete/{id}")]
         [Authorize(Roles = "Admin, Organizer")]
@@ -345,171 +377,6 @@ namespace server.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
-
-        [HttpGet("latest-buyers/{eventId}")]
-        public async Task<IActionResult> GetLatestBuyersForEvent(int eventId)
-        {
-            var buyers = await _context.Tickets
-                .Where(t => t.EventId == eventId)
-                .Include(t => t.User)
-                .GroupBy(t => new { t.UserId, t.User.Name })
-                .Select(g => new LatestTicketSummaryDto
-                {
-                    UserId = g.Key.UserId,
-                    UserName = g.Key.Name,
-                    Quantity = g.Count(),
-                    TotalPrice = g.Sum(t => t.TotalPrice ?? 0),
-                    LatestBookingTime = g.Max(t => t.BookingTime ?? DateTime.MinValue)
-                })
-                .OrderByDescending(x => x.LatestBookingTime)
-                .ToListAsync();
-
-            foreach (var buyer in buyers)
-            {
-                buyer.LatestBookingTime = DateTime.SpecifyKind(buyer.LatestBookingTime, DateTimeKind.Utc);
-            }
-            return Ok(buyers);
-        }
-
-
-        //total revenue 
-        [HttpGet("tickets/sales-report")]
-        [Authorize]                                    // ensure logged-in
-        public async Task<ActionResult<IEnumerable<TicketDto>>> GetAllTicketsForCurrentOrganizer()
-        {
-            var organizerId = _currentUser.GetUserId();
-
-            var tickets = await _context.Tickets
-                .Include(t => t.User)
-                .Include(t => t.Event)
-                .Where(t => t.Event.OrganizerId == organizerId)
-                .Select(t => new TicketDto
-                {
-                    Id = t.Id,
-                    TicketNumber = t.TicketNo,
-                    UserId = t.UserId,
-                    EventId = t.EventId,
-                    BookingTime = t.BookingTime.HasValue ? t.BookingTime.Value.ToLocalTime() : DateTime.MinValue,
-                    //BookingTime =(t => DateTime.SpecifyKind(buyer.LatestBookingTime, DateTimeKind.Utc))
-                    UserName = t.User.Name,
-                    EventTitle = t.Event.Title,
-                    Quantity = t.Quantity,
-                    TotalPrice = t.TotalPrice
-                })
-                .ToListAsync();
-
-            return Ok(tickets);
-        }
-
-
-
-        [Authorize(Roles = "Admin")]
-        [HttpGet("revenue-summary")]
-        public async Task<ActionResult<AdminRevenueSummaryDto>> GetRevenueSummary()
-        {
-            // Fetch all relevant ticket data with related event and organizer info
-            var ticketData = await _context.Tickets
-                .Include(t => t.Event)
-                    .ThenInclude(e => e.Organizer)
-                .ToListAsync();
-
-            var groupedRevenue = ticketData
-                .GroupBy(t => new { t.Event.Organizer.Id, t.Event.Organizer.Name, t.Event.Title })
-                .Select(g => new OrganizerRevenueDto
-                {
-                    OrganizerName = g.Key.Name,
-                    EventName = g.Key.Title,
-                    TicketsSold = g.Sum(t => t.Quantity ?? 0),
-                    Revenue = g.Sum(t => t.TotalPrice ?? 0)
-                })
-                .ToList();
-
-            var totalRevenue = groupedRevenue.Sum(gr => gr.Revenue);
-            var totalTickets = groupedRevenue.Sum(gr => gr.TicketsSold);
-
-            var summary = new AdminRevenueSummaryDto
-            {
-                TotalRevenue = totalRevenue,
-                TotalTicketsSold = totalTickets,
-                OrganizerRevenues = groupedRevenue
-            };
-
-            return Ok(summary);
-        }
-
-        [HttpGet("admin/dashboard")]
-        public async Task<IActionResult> GetDashboardSummary()
-        {
-            await UpdateEventAndTicketStatuses();
-            var totalUsers = await _context.Users.CountAsync(u => u.Role == "User");
-            var totalOrganizers = await _context.Users.CountAsync(u => u.Role == "Organizer");
-            var totalApprovedEvents = await _context.Events.CountAsync(e => e.Status == "Approved");
-
-            var pendingEvents = await _context.Events
-                .Include(e => e.Organizer)
-                .Where(e => e.Status == "Pending")
-                .OrderByDescending(e => e.CreatedAt)
-                .Take(5)
-                .Select(e => new
-                {
-                    e.Title,
-                    OrganizerName = e.Organizer.Name,
-                    e.EventDate,
-                    e.Status,
-                })
-                .ToListAsync();
-
-            return Ok(new
-            {
-                totalUsers,
-                totalOrganizers,
-                totalApprovedEvents,
-                pendingEvents
-            });
-        }
-
-        [HttpGet("organizer/dashboard")]
-public async Task<IActionResult> GetOrganizerDashboard()
-{
-    var uID = _currentUser.GetUserId();
-    // 1. Approved Events Count
-            var approvedCount = await _context.Events
-        .Where(e => e.OrganizerId == uID && e.Status == "Approved")
-        .CountAsync();
-
-    // 2. Pending Events Count
-    var pendingCount = await _context.Events
-        .Where(e => e.OrganizerId == uID && e.Status == "Pending")
-        .CountAsync();
-
-    // 3. Total Tickets Sold (sum of quantities for organizer's events)
-    var ticketSold = await _context.Tickets
-        .Where(t => t.Event.OrganizerId == uID)
-        .SumAsync(t => (int?)t.Quantity ?? 0);
-
-    // 4. Last 5 Ticket Sales
-    var recentTickets = await _context.Tickets
-        .Where(t => t.Event.OrganizerId == uID)
-        .OrderByDescending(t => t.BookingTime)
-        .Take(5)
-        .Select(t => new
-        {
-            TicketNo = t.TicketNo,
-            EventTitle = t.Event.Title,
-            UserName = t.User.Name,
-            Quantity = t.Quantity,
-            BookingTime = t.BookingTime
-        })
-        .ToListAsync();
-
-    return Ok(new
-    {
-        approvedEventCount = approvedCount,
-        pendingEventCount = pendingCount,
-        totalTicketsSold = ticketSold,
-        recentTickets = recentTickets
-    });
-}
 
 
         [HttpPost("admin/update-statuses")]
@@ -560,6 +427,11 @@ public async Task<IActionResult> GetOrganizerDashboard()
                 ValidTickets = validTickets.Count
             });
         }
+
+
+
+
+
 
 
 

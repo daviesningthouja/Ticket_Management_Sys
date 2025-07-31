@@ -50,21 +50,21 @@ namespace server.Controllers
             var tickets = new List<Ticket>();
             decimal pricePerTicket = eventItem.Price;
 
-            for (int i = 0; i < request.Quantity; i++)
-            {
-                var newTicket = new Ticket
-                {
-                    UserId = request.UserId,
-                    EventId = request.EventId,
-                    BookingTime = DateTime.UtcNow,
-                    Quantity = 1,
-                    TotalPrice = pricePerTicket,
-                    TicketNo = GenerateTicketNumber()
-                };
+            // for (int i = 0; i < request.Quantity; i++)
+            // {
+            //     var newTicket = new Ticket
+            //     {
+            //         UserId = request.UserId,
+            //         EventId = request.EventId,
+            //         BookingTime = DateTime.UtcNow,
+              
+            //         TotalPrice = pricePerTicket,
+            //         TicketNo = GenerateTicketNumber()
+            //     };
 
-                tickets.Add(newTicket);
-                _context.Tickets.Add(newTicket);
-            }
+            //     tickets.Add(newTicket);
+            //     _context.Tickets.Add(newTicket);
+            // }
 
             await _context.SaveChangesAsync();
 
@@ -120,7 +120,7 @@ namespace server.Controllers
                     BookingTime = t.BookingTime.HasValue ? t.BookingTime.Value.ToLocalTime() : DateTime.MinValue,
                     UserName = t.User.Name,
                     EventTitle = t.Event.Title,
-                    Quantity = t.Quantity,
+                 
                     TotalPrice = t.TotalPrice,
                     Status = t.Status
                 })

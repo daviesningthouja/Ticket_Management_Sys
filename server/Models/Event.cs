@@ -40,8 +40,8 @@ public partial class Event
     public virtual User Organizer { get; set; } = null!;
 
     [InverseProperty("Event")]
-    public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+    public virtual ICollection<TicketCategory> TicketCategories { get; set; } = new List<TicketCategory>();
 
-    [NotMapped]
-    public decimal TotalRevenue => Tickets?.Sum(t => t.TotalPrice) ?? 0;
+    [InverseProperty("Event")]
+    public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }
