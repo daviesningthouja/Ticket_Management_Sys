@@ -40,38 +40,56 @@ namespace server.Controllers
         [Route("book")]
         [HttpPost]
         public async Task<ActionResult<List<TicketDto>>> BookTicket([FromBody] BookTicketRequest request)
+{
+    int userId = _currentUser.GetUserId();
+
+    var user = await _context.Users.FindAsync(userId);
+    var eventItem = await _context.Events.FindAsync(request.EventId);
+
+    if (user == null || eventItem == null)
+        return NotFound("User or Event not found");
+
+    if (request.SeatIds == null || !request.SeatIds.Any())
+        return BadRequest("No seats selected.");
+
+    var seats = await _context.Seats
+        .Include(s => s.Category)
+        .Where(s => request.SeatIds.Contains(s.Id))
+        .ToListAsync();
+
+    var alreadyBooked = seats.Where(s => s.IsBooked == true).ToList();
+    if (alreadyBooked.Any())
+    {
+        var bookedSeats = string.Join(", ", alreadyBooked.Select(s => s.SeatNumber));
+        return BadRequest($"Seats already booked: {bookedSeats}");
+    }
+
+    List<Ticket> tickets = new();
+
+    foreach (var seat in seats)
+    {
+        var ticket = new Ticket
         {
-            var user = await _context.Users.FindAsync(request.UserId);
-            var eventItem = await _context.Events.FindAsync(request.EventId);
+            UserId = userId,
+            EventId = eventItem.Id,
+            SeatId = seat.Id,
+            CategoryId =seat.CategoryId,
+            BookingTime = DateTime.UtcNow,
+            TicketNo = GenerateTicketNumber(),
+            TotalPrice = seat.Category.Price,
+            Status = "Valid"
+        };
 
-            if (user == null || eventItem == null)
-                return NotFound("User or Event not found");
+        seat.IsBooked = true;
+        tickets.Add(ticket);
+        _context.Tickets.Add(ticket);
+    }
 
-            var tickets = new List<Ticket>();
-            decimal pricePerTicket = eventItem.Price;
+    await _context.SaveChangesAsync();
 
-            // for (int i = 0; i < request.Quantity; i++)
-            // {
-            //     var newTicket = new Ticket
-            //     {
-            //         UserId = request.UserId,
-            //         EventId = request.EventId,
-            //         BookingTime = DateTime.UtcNow,
-              
-            //         TotalPrice = pricePerTicket,
-            //         TicketNo = GenerateTicketNumber()
-            //     };
-
-            //     tickets.Add(newTicket);
-            //     _context.Tickets.Add(newTicket);
-            // }
-
-            await _context.SaveChangesAsync();
-
-            var ticketDtos = tickets.Select(t => _mapper.Map<TicketDto>(t)).ToList();
-
-            return Ok(ticketDtos);
-        }
+    var ticketDtos = _mapper.Map<List<TicketDto>>(tickets);
+    return Ok(ticketDtos);
+}
 
 
         //this for org need for user 
