@@ -21,12 +21,12 @@ namespace server.Controllers
 {
     [Authorize]
     [Route("api/cart")]
-    public class CardController : Controller
+    public class CartController : Controller
     {
         private readonly TmsContext _context;
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUser;
-        public CardController(TmsContext context, IMapper mapper, ICurrentUserService currentUser)
+        public CartController(TmsContext context, IMapper mapper, ICurrentUserService currentUser)
         {
             _context = context;
             _mapper = mapper;
@@ -75,7 +75,7 @@ namespace server.Controllers
                 .ThenInclude(s => s.Category)
                 .ThenInclude(c => c.Event)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
-            //Console.WriteLine($"Loaded {cart.CartItems.Count} cart items for user {userId}");
+            Console.WriteLine($"Loaded {cart.CartItems.Count} cart items for user {userId}");
             if (cart == null)
                 return NotFound("Cart not found.");
             var cartDto = _mapper.Map<CartDto>(cart);
@@ -121,7 +121,7 @@ namespace server.Controllers
             return Ok(cartItemDto);
         }
 
-         // ✅ Delete item from cart
+        // ✅ Delete item from cart
         [HttpDelete("items/{itemId}")]
         public async Task<IActionResult> RemoveItem(int itemId)
         {
@@ -153,6 +153,21 @@ namespace server.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("summary")]
+        public async Task<IActionResult> GetCartSummary()
+        {
+            int userId = _currentUser.GetUserId();
+            var items = await _context.CartItems
+                .Include(i => i.Seat)
+                .ThenInclude(s => s.Category)
+                .Where(i => i.Cart.UserId == userId)
+                .ToListAsync();
+
+            var total = items.Sum(i => i.Seat.Category.Price);
+            return Ok(new { count = items.Count, total });
+        }
+
 
     }
 }
